@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pocket Track — Personal Finance</title>
+<style>
+  :root{
+    --blue:#3b82f6; --muted:#f3f6fb; --card:#ffffff; --radius:18px;
+    --text:#111827; --sub:#6b7280;
+  }
+  html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:linear-gradient(180deg,#eef3fb 0%, #f8fafc 100%); color:var(--text); -webkit-font-smoothing:antialiased;}
+  .app {max-width:900px; margin:20px auto; padding:14px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;}
+  .card{background:var(--card); border-radius:var(--radius); box-shadow: 0 6px 18px rgba(15,23,42,0.06); padding:18px;}
+  .header {grid-column:1/3; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  h1{margin:0; font-size:20px;}
+  .balances{display:flex; gap:12px; align-items:center;}
+  .balance-pill{background:var(--muted); padding:12px 16px; border-radius:12px; min-width:130px; text-align:center;}
+  .balance-pill h3{margin:0; font-size:12px; color:var(--sub);}
+  .balance-pill p{margin:4px 0 0; font-size:18px; font-weight:700;}
+  .big-button{background:var(--blue); color:white; padding:10px 14px; border-radius:12px; border:none; font-weight:600; box-shadow:0 6px 12px rgba(59,130,246,0.18);}
+  form .row{margin-bottom:12px;}
+  label{display:block; font-size:13px; color:var(--sub); margin-bottom:6px;}
+  input[type="text"], input[type="number"], select, textarea{width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; background:white; box-sizing:border-box; font-size:15px;}
+  textarea{min-height:70px; resize:vertical;}
+  .radio-group{display:flex; gap:12px; margin-top:6px; align-items:center;}
+  .recent-list{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+  .txn{display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; background:#fbfdff; border:1px solid #f1f6fb;}
+  .txn .icon{width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px;}
+  .txn .info{flex:1;}
+  .txn .meta{color:var(--sub); font-size:13px;}
+  .txn .amount{font-weight:700;}
+  .controls{display:flex; gap:8px; margin-top:8px;}
+  .small-btn{padding:6px 8px; border-radius:8px; border:1px solid #e6eef8; background:white; font-size:13px;}
+  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .summary-tabs{display:flex; gap:8px; margin-bottom:12px;}
+  .tab{padding:8px 12px; border-radius:12px; background:#f3f7fb; cursor:pointer;}
+  .tab.active{background:white; box-shadow:0 4px 10px rgba(15,23,42,0.06);}
+  .footer-actions{display:flex; gap:8px; justify-content:space-between; align-items:center;}
+  .export-btn{background:#e6eef8; border-radius:10px; padding:8px 10px;}
+  canvas{width:100%; height:160px;}
+  /* New styles for additional tabs */
+  .main-tabs {display: flex; gap: 8px; margin-bottom: 12px; grid-column: 1/3;}
+  .main-tab {padding: 8px 12px; border-radius: 12px; background: #f3f7fb; cursor: pointer;}
+  .main-tab.active {background: white; box-shadow: 0 4px 10px rgba(15,23,42,0.06);}
+  .daily-expense-table {width: 100%; border-collapse: collapse; margin-top: 10px;}
+  .daily-expense-table th, .daily-expense-table td {padding: 8px; text-align: left; border-bottom: 1px solid #f1f6fb;}
+  .daily-expense-table th {font-size: 13px; color: var(--sub);}
+  /* Add to your <style> section */
+  
+  /* responsive */
+  @media (max-width:800px){
+    .app{grid-template-columns:1fr; padding:12px;}
+    .header{flex-direction:column; align-items:flex-start; gap:12px;}
+    .main-tabs {flex-wrap: wrap;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="main">Main</div>
+    <div class="main-tab" data-tab="daily">Records</div>
+  </div>
+
+  <div class="header" style="grid-column:1/3">
+    <div>
+      <h1>Pocket Track</h1>
+      <div style="color:var(--sub); font-size:13px">Quickly record & manage daily expenses</div>
+    </div>
+    <div class="balances">
+      <div class="balance-pill">
+        <h3>Card Balance</h3>
+        <p id="cardBalance">$1,250.00</p>
+      </div>
+      <div class="balance-pill">
+        <h3>Cash Balance</h3>
+        <p id="cashBalance">$560.50</p>
+      </div>
+      <button class="big-button" id="openAddMoney">+ Add Money</button>
+    </div>
+  </div>
+
+  <!-- Main Tab Content -->
+  <div class="card main-tab-content" id="mainTab">
+    <h3 style="margin-top:0">Add Expense</h3>
+    <form id="expenseForm">
+      <div class="row">
+        <label>Amount</label>
+        <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
+      </div>
+      <div class="row">
+        <label>Category</label>
+        <select id="category">
+          <option selected>Food</option>
+          <option>Travel</option>
+          <option>Shopping</option>
+          <option>Salary</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Date</label>
+        <input type="date" id="expenseDate">
+      </div>
+      <div class="row">
+        <label>Payment method</label>
+        <div class="radio-group">
+          <label><input type="radio" name="method" value="card" checked> Card</label>
+          <label><input type="radio" name="method" value="cash"> Cash</label>
+        </div>
+      </div>
+      <div class="row controls">
+        <button class="big-button" id="saveExpense" type="submit">Save</button>
+        <button type="button" class="small-btn" id="clearForm">Clear</button>
+      </div>
+    </form>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <h3 style="margin-bottom:8px">Transfers (Cash ↔ Card)</h3>
+    <div>
+      <label>Amount</label>
+      <input type="number" id="transferAmount" placeholder="0.00" step="0.01" min="0">
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="small-btn" id="withdrawBtn">Withdraw (Card → Cash)</button>
+        <button class="small-btn" id="depositBtn">Deposit (Cash → Card)</button>
+      </div>
+    </div>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <h3 style="margin:0 0 10px 0">Recent Expenses</h3>
+    <div class="filters">
+      <select id="filterCategory"><option value="">All categories</option></select>
+      <select id="filterMethod"><option value="">All methods</option><option value="card">Card</option><option value="cash">Cash</option></select>
+      <input type="date" id="filterDate" style="padding:8px; border-radius:8px; border:1px solid #e6eef8;">
+      <button class="small-btn" id="clearFilters">Reset</button>
+    </div>
+    <div class="recent-list" id="recentList"></div>
+  </div>
+
+  <!-- Records Tab Content -->
+  <div class="card main-tab-content" id="dailyTab" style="display:none; grid-column:1/3">
+    <h3 style="margin-top:0">Records</h3>
+    <div id="dailyExpensesContainer"></div>
+    <!-- Add this for Money Deposits table -->
+    <h3 style="margin-top:18px">Money Deposits</h3>
+    <div id="dailyDepositsContainer"></div>
+  </div>
+
+  <!-- Add Money Tab Content -->
+  
+
+  <!-- Right column: Reports -->
+  <div class="card" id="rightCol">
+    <h3 style="margin-top:0">Reports</h3>
+
+    <div style="background:var(--muted); padding:12px; border-radius:12px; margin-bottom:10px">
+      <div style="display:flex; gap:10px; justify-content:space-between; align-items:center">
+        <div><strong>Summary</strong><div style="color:var(--sub); font-size:12px">Daily / Weekly / Monthly</div></div>
+        <div style="display:flex; gap:8px;">
+          <div id="summaryCard" style="text-align:right">
+            <div style="font-size:12px; color:var(--sub)">Card</div>
+            <div style="font-weight:700" id="summaryCardAmount">$0.00</div>
+          </div>
+          <div id="summaryCash" style="text-align:right">
+            <div style="font-size:12px; color:var(--sub)">Cash</div>
+            <div style="font-weight:700" id="summaryCashAmount">$0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-tabs" role="tablist">
+      <div class="tab active" data-range="daily">Daily</div>
+      <div class="tab" data-range="weekly">Weekly</div>
+      <div class="tab" data-range="monthly">Monthly</div>
+    </div>
+
+    <div>
+      <canvas id="pieChart"></canvas>
+      <div style="display:flex; justify-content:space-between; margin-top:8px;">
+        <div><strong>Total</strong><div id="totalSpend" style="color:var(--sub)">$0.00</div></div>
+        <div>
+          <div style="font-size:13px; color:var(--sub)">Legend</div>
+          <div id="legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <div class="footer-actions">
+      <div>
+        <label style="font-size:13px; color:var(--sub)">Import CSV</label>
+        <input type="file" id="importCSV" accept=".csv" style="display:block; margin-top:6px;">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="export-btn" id="exportCSV">Export CSV</button>
+        <button class="small-btn" id="resetAll">Reset All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal (lightweight) -->
+<div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Edit Expense</h3>
+    <form id="editForm">
+      <div class="row"><label>Amount</label><input type="number" id="editAmount" step="0.01" min="0" required></div>
+      <div class="row"><label>Category</label><select id="editCategory"></select></div>
+      <div class="row"><label>Method</label>
+        <div class="radio-group">
+          <label><input type="radio" name="editMethod" value="card"> Card</label>
+          <label><input type="radio" name="editMethod" value="cash"> Cash</label>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="small-btn" id="cancelEdit">Cancel</button>
+        <button class="big-button" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Password Modal for Reset -->
+<div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Reset All Data</h3>
+    <p style="font-size:14px; color:var(--sub); margin-top:0">Enter password to reset all data:</p>
+    <input type="password" id="resetPassword" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; margin-bottom:12px;" placeholder="Password">
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button type="button" class="small-btn" id="cancelReset">Cancel</button>
+      <button class="big-button" id="confirmReset">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<div id="quickAddMoneyModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:14px; padding:18px; width:90%; max-width:340px;">
+    <h3 style="margin-top:0">Add Money</h3>
+    <form id="quickAddMoneyForm">
+      <div class="row">
+        <label>Add to</label>
+        <div class="radio-group">
+          <label><input type="radio" name="quickAddMethod" value="card" checked> Card</label>
+          <label><input type="radio" name="quickAddMethod" value="cash"> Cash</label>
+        </div>
+      </div>
+      <div class="row">
+        <label>Amount</label>
+        <input type="number" id="quickAddAmount" step="0.01" min="0" placeholder="0.00" required>
+      </div>
+      <div class="row controls">
+        <button class="big-button" type="submit">OK</button>
+        <button type="button" class="small-btn" id="quickAddCancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* Storage keys & initial state */
+const STORAGE_KEY = 'pockettrack_v1';
+const RESET_PASSWORD = "admin123"; // Default password for reset
+let state = {
+  balances: { card: 0, cash: 0 },
+  expenses: [], // {id, amount, category, method, dateISO, type: 'expense' or 'add-money'}
+  addedMoney: [] // {id, amount, method, dateISO}
+};
+
+/* Utilities */
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Number(n || 0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+const saveState = ()=> localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+const loadState = ()=> {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) try{ state = JSON.parse(raw); } catch(e){}
+  // ensure structures
+  if(!state.balances) state.balances = {card:0,cash:0};
+  if(!state.expenses) state.expenses = [];
+  if(!state.addedMoney) state.addedMoney = [];
+};
+const round = n => Math.round((n+Number.EPSILON)*100)/100;
+
+/* Initialize UI */
+function init(){
+  loadState();
+  bindEvents();
+  renderAll();
+}
+
+function bindEvents(){
+  $('expenseForm').addEventListener('submit', onSaveExpense);
+  $('clearForm').addEventListener('click', clearForm);
+  $('openAddMoney').addEventListener('click', () => {
+    $('quickAddMoneyModal').style.display = 'flex';
+    $('quickAddAmount').value = '';
+    document.querySelector('input[name="quickAddMethod"][value="card"]').checked = true;
+  });
+  $('quickAddCancel').addEventListener('click', () => {
+    $('quickAddMoneyModal').style.display = 'none';
+  });
+  $('quickAddMoneyForm').addEventListener('submit', onQuickAddMoney);
+  $('withdrawBtn').addEventListener('click', doWithdraw);
+  $('depositBtn').addEventListener('click', doDeposit);
+  $('filterCategory').addEventListener('change', renderRecent);
+  $('filterMethod').addEventListener('change', renderRecent);
+  $('filterDate').addEventListener('change', renderRecent);
+  $('clearFilters').addEventListener('click', ()=>{ $('filterCategory').value=''; $('filterMethod').value=''; $('filterDate').value=''; renderRecent(); });
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', onTab));
+  $('exportCSV').addEventListener('click', exportCSV);
+  $('importCSV').addEventListener('change', importCSV);
+  $('resetAll').addEventListener('click', showPasswordModal);
+  
+
+  // Main tab navigation (fix: highlight Add Money tab too)
+  document.querySelectorAll('.main-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const tabName = tab.getAttribute('data-tab');
+      // Hide all tab contents
+      document.querySelectorAll('.main-tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      // Show selected tab content
+      const tabContent = document.getElementById(tabName + 'Tab');
+      if (tabContent) tabContent.style.display = 'block';
+
+      // Update active tab (fix: highlight all tabs)
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Render specific content if needed
+      if (tabName === 'daily') {
+        renderDailyExpenses();
+        $('rightCol').style.display = 'none'; // Hide reports column
+      } else {
+        $('rightCol').style.display = 'block'; // Show reports column for main tab
+      }
+    });
+  });
+
+  // Show Main tab by default on load
+  document.querySelectorAll('.main-tab-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  document.getElementById('mainTab').style.display = 'block';
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.main-tab[data-tab="main"]').classList.add('active');
+
+  // Edit modal handlers
+  $('cancelEdit').addEventListener('click', ()=> $('editModal').style.display='none');
+  $('editForm').addEventListener('submit', onSaveEdit);
+  
+  // Password modal handlers
+  $('cancelReset').addEventListener('click', ()=> $('passwordModal').style.display='none');
+  $('confirmReset').addEventListener('click', confirmReset);
+}
+
+/* Render everything */
+function renderAll(){
+  $('cardBalance').textContent = fmt(state.balances.card);
+  $('cashBalance').textContent = fmt(state.balances.cash);
+  populateCategoryFilter();
+  renderRecent();
+  renderSummary();
+  
+  saveState();
+}
+
+/* Populate filter categories (unique categories) */
+function populateCategoryFilter(){
+  const set = new Set(['Food','Travel','Shopping','Salary','Other']);
+  state.expenses.forEach(e=> set.add(e.category));
+  const sel = $('filterCategory');
+  sel.innerHTML = '<option value="">All categories</option>';
+  for(const s of set) {
+    const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+  }
+  // also populate edit category select
+  const editCat = $('editCategory'); editCat.innerHTML='';
+  for(const s of set){ const o=document.createElement('option'); o.value=s; o.textContent=s; editCat.appendChild(o); }
+}
+
+/* Recent list and filters */
+function renderRecent(){
+  const container = $('recentList'); container.innerHTML='';
+  const cat = $('filterCategory').value;
+  const method = $('filterMethod').value;
+  const dateFilter = $('filterDate').value;
+
+  // Sort by date descending (latest first)
+  const list = state.expenses.slice().sort((a,b)=> new Date(b.dateISO)- new Date(a.dateISO));
+  const filtered = list.filter(e=>{
+    if(cat && e.category !== cat) return false;
+    if(method && e.method !== method) return false;
+    if(dateFilter){
+      const d = new Date(e.dateISO); const f = new Date(dateFilter);
+      if(d.getFullYear() !== f.getFullYear() || d.getMonth() !== f.getMonth() || d.getDate() !== f.getDate()) return false;
+    }
+    return true;
+  });
+
+  if(filtered.length === 0){
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No transactions yet.</div>';
+    return;
+  }
+
+  filtered.forEach(tx=>{
+    const div = document.createElement('div'); div.className='txn';
+    const icon = document.createElement('div'); icon.className='icon';
+    icon.style.background = tx.method === 'card' ? '#eef4ff' : '#fff3e6';
+    icon.textContent = tx.category[0] || '•';
+
+    const info = document.createElement('div'); info.className='info';
+    const d = new Date(tx.dateISO);
+    info.innerHTML = `<div style="font-weight:600">${tx.category}</div><div class="meta">${d.toLocaleString()}</div>`;
+
+    const amount = document.createElement('div'); amount.style.textAlign='right';
+    amount.innerHTML = `<div class="amount">${tx.amount<0? fmt(Math.abs(tx.amount)) : fmt(tx.amount)}</div><div class="meta">${tx.method}</div>`;
+
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.flexDirection='column'; actions.style.gap='6px';
+    const editBtn = document.createElement('button'); editBtn.className='small-btn'; editBtn.textContent='Edit'; editBtn.onclick = ()=> openEdit(tx.id);
+    const delBtn = document.createElement('button'); delBtn.className='small-btn'; delBtn.textContent='Delete'; delBtn.onclick = ()=> deleteTxn(tx.id);
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    div.appendChild(icon); div.appendChild(info); div.appendChild(amount); div.appendChild(actions);
+    container.appendChild(div);
+  });
+}
+
+/* Save expense */
+function onSaveExpense(e){
+  e.preventDefault();
+  const amt = parseFloat($('amount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  const category = $('category').value;
+  const method = document.querySelector('input[name="method"]:checked').value;
+  const dateInput = $('expenseDate').value;
+  let dateISO;
+  if(dateInput){
+    const now = new Date();
+    const [yyyy, mm, dd] = dateInput.split('-');
+    now.setFullYear(Number(yyyy));
+    now.setMonth(Number(mm)-1);
+    now.setDate(Number(dd));
+    dateISO = now.toISOString();
+  } else {
+    dateISO = new Date().toISOString();
+  }
+
+  // create expense object (store as negative amount for spending, positive if category like Salary could be positive)
+  const txn = {
+    id: 'tx_'+Date.now(),
+    amount: -Math.abs(amt),
+    category, method,
+    dateISO,
+    type: 'expense'
+  };
+
+  // adjust balances
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + txn.amount); // txn.amount negative
+  } else {
+    state.balances.cash = round(state.balances.cash + txn.amount);
+  }
+
+  state.expenses.push(txn);
+  saveState();
+  renderAll();
+  clearForm();
+}
+
+/* Add money function (now uses date from input) */
+function onAddMoney(e) {
+  e.preventDefault();
+  const amt = parseFloat($('addMoneyAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  const method = document.querySelector('input[name="addMoneyMethod"]:checked').value;
+  const dateInput = $('addMoneyDate').value;
+  let dateISO;
+  if(dateInput){
+    const now = new Date();
+    const [yyyy, mm, dd] = dateInput.split('-');
+    now.setFullYear(Number(yyyy));
+    now.setMonth(Number(mm)-1);
+    now.setDate(Number(dd));
+    dateISO = now.toISOString();
+  } else {
+    dateISO = new Date().toISOString();
+  }
+
+  // Add to balance
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + amt);
+  } else {
+    state.balances.cash = round(state.balances.cash + amt);
+  }
+
+  // Record the transaction
+  const addMoneyTxn = {
+    id: 'add_'+Date.now(),
+    amount: amt,
+    method,
+    dateISO,
+    type: 'add-money'
+  };
+
+  state.addedMoney.push(addMoneyTxn);
+  state.expenses.push({
+    id: 'tx_'+Date.now(),
+    amount: amt,
+    category: 'TopUp',
+    method,
+    dateISO,
+    type: 'expense'
+  });
+
+  saveState();
+  renderAll();
+  $('addMoneyAmount').value = '';
+  $('addMoneyDate').value = '';
+  alert(`$${amt} added to ${method}`);
+  
+}
+
+/* Quick Add Money function */
+function onQuickAddMoney(e) {
+  e.preventDefault();
+  const amt = parseFloat($('quickAddAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  const method = document.querySelector('input[name="quickAddMethod"]:checked').value;
+  const dateISO = new Date().toISOString();
+
+  // Add to balance
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + amt);
+  } else {
+    state.balances.cash = round(state.balances.cash + amt);
+  }
+
+  // Record the transaction
+  const addMoneyTxn = {
+    id: 'add_'+Date.now(),
+    amount: amt,
+    method,
+    dateISO,
+    type: 'add-money'
+  };
+
+  state.addedMoney.push(addMoneyTxn);
+  state.expenses.push({
+    id: 'tx_'+Date.now(),
+    amount: amt,
+    category: 'TopUp',
+    method,
+    dateISO,
+    type: 'expense'
+  });
+
+  saveState();
+  renderAll();
+  $('quickAddMoneyModal').style.display = 'none';
+  alert(`$${amt} added to ${method}`);
+}
+
+
+
+/* Render records tab */
+function renderDailyExpenses() {
+  const container = $('dailyExpensesContainer');
+  container.innerHTML = '';
+  
+  // Group expenses by date
+  const expensesByDate = {};
+  state.expenses.forEach(expense => {
+    if (expense.amount >= 0) return; // Skip positive amounts (added money)
+    
+    const date = new Date(expense.dateISO);
+    const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    if (!expensesByDate[dateStr]) {
+      expensesByDate[dateStr] = [];
+    }
+    
+    expensesByDate[dateStr].push(expense);
+  });
+
+  // Sort dates descending (latest first)
+  const sortedDates = Object.keys(expensesByDate).sort((a, b) => {
+    // Convert dd/mm/yyyy to yyyy-mm-dd for comparison
+    const [da, ma, ya] = a.split('/').map(Number);
+    const [db, mb, yb] = b.split('/').map(Number);
+    const dateA = new Date(ya, ma - 1, da);
+    const dateB = new Date(yb, mb - 1, db);
+    return dateB - dateA;
+  });
+  
+  if (sortedDates.length === 0) {
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No expenses recorded yet.</div>';
+  } else {
+    const table = document.createElement('table');
+    table.className = 'daily-expense-table';
+    const tbody = document.createElement('tbody');
+
+    // Create table for each date (latest first)
+    for (const date of sortedDates) {
+      // Sort expenses within the day by time descending (latest first)
+      const dateExpenses = expensesByDate[date].slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+      const total = dateExpenses.reduce((sum, expense) => sum + Math.abs(expense.amount), 0);
+      
+      const headerRow = document.createElement('tr');
+      headerRow.innerHTML = `
+        <th colspan="4" style="background-color: #f3f7fb; font-weight: 600;">${date} - Total: ${fmt(total)}</th>
+      `;
+      tbody.appendChild(headerRow);
+      
+      // Add each expense (latest first)
+      dateExpenses.forEach(expense => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.category}</td>
+          <td>${expense.method}</td>
+          <td>${new Date(expense.dateISO).toLocaleTimeString()}</td>
+          <td style="text-align:right">${fmt(Math.abs(expense.amount))}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+    table.appendChild(tbody);
+    container.appendChild(table);
+  }
+  
+  // --- ADD THIS: Render Money Deposits table below ---
+  renderDailyDeposits();
+}
+
+/* Render Money Deposits in Daily Tab */
+function renderDailyDeposits() {
+  const container = $('dailyDepositsContainer');
+  container.innerHTML = '';
+
+  // Get all deposits (from state.addedMoney)
+  const deposits = state.addedMoney.slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+  if (deposits.length === 0) {
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No deposits yet.</div>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'daily-expense-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Method</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${deposits.map(dep => `
+        <tr>
+          <td>${new Date(dep.dateISO).toLocaleString()}</td>
+          <td>${dep.method}</td>
+          <td style="color:green; text-align:right;">${fmt(dep.amount)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+  container.appendChild(table);
+}
+
+/* Edit flow */
+let editingId = null;
+function openEdit(id){
+  const tx = state.expenses.find(t=>t.id===id); if(!tx) return;
+  editingId = id;
+  $('editAmount').value = Math.abs(tx.amount);
+  $('editCategory').value = tx.category;
+  document.querySelectorAll('input[name="editMethod"]').forEach(r=> r.checked = (r.value===tx.method));
+  $('editModal').style.display='flex';
+}
+function onSaveEdit(e){
+  e.preventDefault();
+  const tx = state.expenses.find(t=>t.id===editingId); if(!tx) return;
+  // We'll reverse original impact then apply new one
+  // reverse:
+  if(tx.method==='card') state.balances.card = round(state.balances.card - tx.amount); // tx.amount negative -> subtract negative -> add
+  else state.balances.cash = round(state.balances.cash - tx.amount);
+
+  // apply edits
+  tx.amount = -Math.abs(parseFloat($('editAmount').value));
+  tx.category = $('editCategory').value;
+  tx.method = document.querySelector('input[name="editMethod"]:checked').value;
+  tx.dateISO = new Date().toISOString();
+
+  if(tx.method==='card') state.balances.card = round(state.balances.card + tx.amount);
+  else state.balances.cash = round(state.balances.cash + tx.amount);
+
+  editingId = null;
+  $('editModal').style.display='none';
+  saveState(); renderAll();
+}
+
+/* Delete */
+function deleteTxn(id){
+  if(!confirm('Delete this transaction?')) return;
+  const idx = state.expenses.findIndex(t=>t.id===id); if(idx<0) return;
+  const tx = state.expenses[idx];
+  // reverse its balance effect
+  if(tx.method==='card') state.balances.card = round(state.balances.card - tx.amount);
+  else state.balances.cash = round(state.balances.cash - tx.amount);
+  state.expenses.splice(idx,1);
+  saveState(); renderAll();
+}
+
+/* Transfers */
+function doWithdraw(){
+  const amt = parseFloat($('transferAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter valid amount'); return; }
+  if(state.balances.card < amt){ alert('Insufficient card balance'); return; }
+  state.balances.card = round(state.balances.card - amt);
+  state.balances.cash = round(state.balances.cash + amt);
+  // record transfer as two transactions for history (optional: just one transfer record)
+  state.expenses.push({id:'tx_'+Date.now(), amount:-amt, category:'Withdraw', method:'card', dateISO:new Date().toISOString(), type: 'expense'});
+  saveState(); renderAll(); $('transferAmount').value='';
+}
+function doDeposit(){
+  const amt = parseFloat($('transferAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter valid amount'); return; }
+  if(state.balances.cash < amt){ alert('Insufficient cash balance'); return; }
+  state.balances.cash = round(state.balances.cash - amt);
+  state.balances.card = round(state.balances.card + amt);
+  const dateISO = new Date().toISOString();
+  // Add to addedMoney to show in deposits table
+  state.addedMoney.push({
+    id: 'add_'+Date.now(),
+    amount: amt,
+    method: 'card', // Depositing to card
+    dateISO,
+    type: 'add-money'
+  });
+  state.expenses.push({id:'tx_'+Date.now(), amount:-amt, category:'Deposit', method:'cash', dateISO, type: 'expense'});
+  saveState(); renderAll(); $('transferAmount').value='';
+}
+
+/* Password protected reset */
+function showPasswordModal() {
+  $('passwordModal').style.display = 'flex';
+  $('resetPassword').value = '';
+}
+
+function confirmReset() {
+  const password = $('resetPassword').value;
+  if (password === RESET_PASSWORD) {
+    state.expenses = [];
+    state.addedMoney = [];
+    state.balances = {card: 0, cash: 0};
+    saveState();
+    renderAll();
+    $('passwordModal').style.display = 'none';
+    alert('All data has been reset.');
+  } else {
+    alert('Incorrect password. Reset cancelled.');
+    $('passwordModal').style.display = 'none';
+  }
+}
+
+/* Summaries & charts */
+function onTab(e){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  renderSummary();
+}
+function getRange(){
+  const active = document.querySelector('.tab.active').dataset.range;
+  return active;
+}
+function renderSummary(){
+  // compute totals for chosen range
+  const range = getRange();
+  const now = new Date();
+  let from;
+  if(range==='daily'){ from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+  else if(range==='weekly'){ const d = now.getDay(); const start = new Date(now); start.setDate(now.getDate() - d); from = new Date(start.getFullYear(), start.getMonth(), start.getDate()); }
+  else { from = new Date(now.getFullYear(), now.getMonth(), 1); }
+
+  const filtered = state.expenses.filter(tx => new Date(tx.dateISO) >= from);
+
+  // totals by category and method
+  const catTotals = {};
+  let totalCard=0, totalCash=0, total=0;
+  filtered.forEach(tx=>{
+    const c = tx.category || 'Other';
+    catTotals[c] = (catTotals[c]||0) + tx.amount;
+    if(tx.method==='card') totalCard += tx.amount;
+    else totalCash += tx.amount;
+    total += tx.amount;
+  });
+
+  $('summaryCardAmount').textContent = fmt(Math.abs(totalCard));
+  $('summaryCashAmount').textContent = fmt(Math.abs(totalCash));
+  $('totalSpend').textContent = fmt(Math.abs(total));
+
+  // prepare pie chart data (use absolute of negative amounts only; include positive TopUps as separate)
+  const entries = Object.entries(catTotals).map(([k,v])=> ({k, v: Math.abs(v)})).filter(x=>x.v>0);
+  drawPieChart(entries);
+}
+
+/* Simple pie chart drawing */
+function drawPieChart(entries){
+  const canvas = $('pieChart'); const ctx = canvas.getContext('2d');
+  // set canvas pixel size
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const total = entries.reduce((s,e)=>s+e.v,0) || 1;
+  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#84cc16','#6366f1'];
+  let start = 0;
+  const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(cx,cy)*0.8;
+  entries.forEach((e,i)=>{
+    const slice = e.v/total * 2 * Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy, r, start, start+slice);
+    ctx.closePath(); ctx.fillStyle = colors[i%colors.length]; ctx.fill();
+    start += slice;
+  });
+
+  // legend
+  const legend = $('legend'); legend.innerHTML='';
+  entries.forEach((e,i)=>{
+    const p = document.createElement('div'); p.style.display='flex'; p.style.alignItems='center'; p.style.marginBottom='4px';
+    const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background=colors[i%colors.length]; sw.style.marginRight='6px';
+    p.appendChild(sw);
+    p.appendChild(document.createTextNode(`${e.k}: ${fmt(e.v)}`));
+    legend.appendChild(p);
+  });
+}
+
+/* CSV export/import */
+function exportCSV(){
+  const rows = [['Date','Amount','Category','Method']];
+  state.expenses.forEach(tx=>{
+    const d = new Date(tx.dateISO);
+    rows.push([d.toLocaleString(), tx.amount, tx.category, tx.method]);
+  });
+  const csv = rows.map(r=>r.map(f=>`"${f}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'pockettrack_export.csv'; a.click();
+}
+function importCSV(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const text = ev.target.result;
+    const rows = text.split('\n').map(r=>r.split(',').map(f=>f.replace(/^"|"$/g,'')));
+    // skip header
+    for(let i=1; i<rows.length; i++){
+      const [dateStr, amtStr, cat, method] = rows[i];
+      if(!dateStr || !amtStr) continue;
+      const amount = parseFloat(amtStr);
+      if(isNaN(amount)) continue;
+      const dateISO = new Date(dateStr).toISOString();
+      state.expenses.push({id:'tx_'+Date.now(), amount, category:cat||'Other', method:method||'card', dateISO, type: 'expense'});
+      // adjust balance
+      if(method==='card') state.balances.card += amount;
+      else state.balances.cash += amount;
+    }
+    saveState(); renderAll();
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* Clear form */
+function clearForm(){
+  $('expenseForm').reset();
+  $('category').value = 'Food'; // Set Food as default
+  $('expenseDate').value = ''; // Clear date
+}
+
+// Initialize
+init();
+</script>
+</body>
+</html>

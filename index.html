@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pocket Track — Personal Finance</title>
 <style>
     .main-tab-content {
@@ -12,7 +12,7 @@
     --blue:#3b82f6; --muted:#f3f6fb; --card:#ffffff; --radius:18px;
     --text:#111827; --sub:#6b7280;
   }
-  html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:linear-gradient(180deg,#eef3fb 0%, #f8fafc 100%); color:var(--text); -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;}
+  html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:linear-gradient(180deg,#eef3fb 0%, #f8fafc 100%); color:var(--text); -webkit-font-smoothing:antialiased;}
   .app {max-width:900px; margin:20px auto; padding:14px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;}
   .card{background:var(--card); border-radius:var(--radius); box-shadow: 0 6px 18px rgba(15,23,42,0.06); padding:18px;}
   .header {grid-column:1/3; display:flex; align-items:center; justify-content:space-between; gap:12px;}
@@ -24,7 +24,7 @@
   .big-button{background:var(--blue); color:white; padding:10px 14px; border-radius:12px; border:none; font-weight:600; box-shadow:0 6px 12px rgba(59,130,246,0.18);}
   form .row{margin-bottom:12px;}
   label{display:block; font-size:13px; color:var(--sub); margin-bottom:6px;}
-  input[type="text"], input[type="password"], input[type="number"], select, textarea{width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; background:white; box-sizing:border-box; font-size:15px; -webkit-appearance:none; -moz-appearance:none; appearance:none;}
+  input[type="text"], input[type="password"], input[type="number"], select, textarea{width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; background:white; box-sizing:border-box; font-size:15px;}
   textarea{min-height:70px; resize:vertical;}
   .radio-group{display:flex; gap:12px; margin-top:6px; align-items:center;}
   .recent-list{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
@@ -66,17 +66,12 @@
   
   /* responsive for mobile view */
   @media (max-width: 600px) {
-    html, body {
-      overflow-x: hidden !important;
-      -webkit-overflow-scrolling: touch !important;
-    }
     .app {
       display: flex !important;
       flex-direction: column !important;
       gap: 14px !important;
       padding: 10px !important;
       max-width: 100vw !important;
-      min-height: 100vh !important;
     }
     .header {
       flex-direction: column !important;
@@ -182,44 +177,6 @@
     #addMoneyModal .radio-group label {
       width: 100% !important;
       justify-content: center !important;
-    }
-    /* Prevent zoom on input focus - comprehensive solution */
-    input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
-      font-size: 16px !important;
-      -webkit-appearance: none !important;
-      -moz-appearance: none !important;
-      appearance: none !important;
-      transform: translateZ(0) !important;
-      -webkit-transform: translateZ(0) !important;
-      -webkit-tap-highlight-color: transparent !important;
-      -webkit-touch-callout: none !important;
-      -webkit-user-select: text !important;
-      -khtml-user-select: text !important;
-      -moz-user-select: text !important;
-      -ms-user-select: text !important;
-      user-select: text !important;
-    }
-    /* Specific focus prevention */
-    input:focus, select:focus, textarea:focus {
-      font-size: 16px !important;
-      transform: scale(1) !important;
-      -webkit-transform: scale(1) !important;
-      -webkit-tap-highlight-color: transparent !important;
-    }
-    /* Additional mobile input fixes */
-    input[type="number"] {
-      -moz-appearance: textfield !important;
-      appearance: textfield !important;
-    }
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none !important;
-      margin: 0 !important;
-    }
-    /* Ensure proper touch targets */
-    button, .main-tab, .tab, .small-btn, .big-button {
-      min-height: 44px !important;
-      min-width: 44px !important;
     }
   }
 </style>
@@ -521,61 +478,6 @@
 </div>
 
 <script>
-// Prevent zoom on input focus for mobile devices
-function preventZoomOnFocus() {
-  if (window.innerWidth <= 600) {
-    const inputs = document.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-      input.addEventListener('focus', function() {
-        // Force viewport to stay at 1.0 scale
-        const viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-          viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no');
-        }
-        // Additional prevention
-        document.body.style.zoom = '1';
-        document.documentElement.style.zoom = '1';
-      });
-      
-      input.addEventListener('blur', function() {
-        // Restore normal viewport after blur
-        const viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-          viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no');
-        }
-        // Reset zoom
-        document.body.style.zoom = '1';
-        document.documentElement.style.zoom = '1';
-      });
-      
-      // Prevent double-tap zoom
-      input.addEventListener('touchend', function(e) {
-        e.preventDefault();
-      });
-    });
-  }
-}
-
-// Additional mobile zoom prevention
-function preventMobileZoom() {
-  if (window.innerWidth <= 600) {
-    // Prevent double-tap zoom
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-      const now = (new Date()).getTime();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, false);
-    
-    // Prevent pinch zoom
-    document.addEventListener('gesturestart', function (event) {
-      event.preventDefault();
-    });
-  }
-}
-
 // Move Reports above Recent in mobile view
 function moveReportsForMobile() {
   if (window.innerWidth <= 600) {
@@ -598,16 +500,8 @@ function moveReportsForMobile() {
     }
   }
 }
-window.addEventListener('DOMContentLoaded', function() {
-  moveReportsForMobile();
-  preventZoomOnFocus();
-  preventMobileZoom();
-});
-window.addEventListener('resize', function() {
-  moveReportsForMobile();
-  preventZoomOnFocus();
-  preventMobileZoom();
-});
+window.addEventListener('DOMContentLoaded', moveReportsForMobile);
+window.addEventListener('resize', moveReportsForMobile);
 /* Storage keys & initial state */
 const STORAGE_KEY = 'pockettrack_v1';
 const RESET_PASSWORD = "Y0uM3N0w"; // Default password for reset

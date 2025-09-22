@@ -183,12 +183,38 @@
       width: 100% !important;
       justify-content: center !important;
     }
-    /* Prevent zoom on input focus */
+    /* Prevent zoom on input focus - comprehensive solution */
     input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
       font-size: 16px !important;
       -webkit-appearance: none !important;
       -moz-appearance: none !important;
       appearance: none !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: text !important;
+      -khtml-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
+    }
+    /* Specific focus prevention */
+    input:focus, select:focus, textarea:focus {
+      font-size: 16px !important;
+      transform: scale(1) !important;
+      -webkit-transform: scale(1) !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    /* Additional mobile input fixes */
+    input[type="number"] {
+      -moz-appearance: textfield !important;
+      appearance: textfield !important;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none !important;
+      margin: 0 !important;
     }
     /* Ensure proper touch targets */
     button, .main-tab, .tab, .small-btn, .big-button {
@@ -495,6 +521,61 @@
 </div>
 
 <script>
+// Prevent zoom on input focus for mobile devices
+function preventZoomOnFocus() {
+  if (window.innerWidth <= 600) {
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        // Force viewport to stay at 1.0 scale
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no');
+        }
+        // Additional prevention
+        document.body.style.zoom = '1';
+        document.documentElement.style.zoom = '1';
+      });
+      
+      input.addEventListener('blur', function() {
+        // Restore normal viewport after blur
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no');
+        }
+        // Reset zoom
+        document.body.style.zoom = '1';
+        document.documentElement.style.zoom = '1';
+      });
+      
+      // Prevent double-tap zoom
+      input.addEventListener('touchend', function(e) {
+        e.preventDefault();
+      });
+    });
+  }
+}
+
+// Additional mobile zoom prevention
+function preventMobileZoom() {
+  if (window.innerWidth <= 600) {
+    // Prevent double-tap zoom
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+    
+    // Prevent pinch zoom
+    document.addEventListener('gesturestart', function (event) {
+      event.preventDefault();
+    });
+  }
+}
+
 // Move Reports above Recent in mobile view
 function moveReportsForMobile() {
   if (window.innerWidth <= 600) {
@@ -517,8 +598,16 @@ function moveReportsForMobile() {
     }
   }
 }
-window.addEventListener('DOMContentLoaded', moveReportsForMobile);
-window.addEventListener('resize', moveReportsForMobile);
+window.addEventListener('DOMContentLoaded', function() {
+  moveReportsForMobile();
+  preventZoomOnFocus();
+  preventMobileZoom();
+});
+window.addEventListener('resize', function() {
+  moveReportsForMobile();
+  preventZoomOnFocus();
+  preventMobileZoom();
+});
 /* Storage keys & initial state */
 const STORAGE_KEY = 'pockettrack_v1';
 const RESET_PASSWORD = "Y0uM3N0w"; // Default password for reset

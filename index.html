@@ -1,0 +1,1966 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pocket Track — Personal Finance</title>
+<style>
+    .main-tab-content {
+      margin-bottom: 70px !important;
+    }
+  :root{
+    --blue:#3b82f6; --muted:#f3f6fb; --card:#ffffff; --radius:18px;
+    --text:#111827; --sub:#6b7280;
+  }
+  html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:linear-gradient(180deg,#eef3fb 0%, #f8fafc 100%); color:var(--text); -webkit-font-smoothing:antialiased;}
+  .app {max-width:900px; margin:20px auto; padding:14px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;}
+  .card{background:var(--card); border-radius:var(--radius); box-shadow: 0 6px 18px rgba(15,23,42,0.06); padding:18px;}
+  .header {grid-column:1/3; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  h1{margin:0; font-size:20px;}
+  .balances{display:flex; gap:12px; align-items:center;}
+  .balance-pill{background:var(--muted); padding:12px 16px; border-radius:12px; min-width:130px; text-align:center;}
+  .balance-pill h3{margin:0; font-size:12px; color:var(--sub);}
+  .balance-pill p{margin:4px 0 0; font-size:18px; font-weight:700;}
+  .big-button{background:var(--blue); color:white; padding:10px 14px; border-radius:12px; border:none; font-weight:600; box-shadow:0 6px 12px rgba(59,130,246,0.18);}
+  form .row{margin-bottom:12px;}
+  label{display:block; font-size:13px; color:var(--sub); margin-bottom:6px;}
+  input[type="text"], input[type="password"], input[type="number"], select, textarea{width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; background:white; box-sizing:border-box; font-size:15px;}
+  textarea{min-height:70px; resize:vertical;}
+  .radio-group{display:flex; gap:12px; margin-top:6px; align-items:center;}
+  .recent-list{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+  .txn{display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; background:#fbfdff; border:1px solid #f1f6fb;}
+  .txn .icon{width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px;}
+  .txn .info{flex:1;}
+  .txn .meta{color:var(--sub); font-size:13px;}
+  .txn .amount{font-weight:700;}
+  .controls{display:flex; gap:8px; margin-top:8px;}
+  .small-btn{padding:6px 8px; border-radius:8px; border:1px solid #e6eef8; background:white; font-size:13px;}
+  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .summary-tabs{display:flex; gap:8px; margin-bottom:12px;}
+  .tab{padding:8px 12px; border-radius:12px; background:#f3f7fb; cursor:pointer;}
+  .tab.active{background:white; box-shadow:0 4px 10px rgba(15,23,42,0.06);}
+  .footer-actions{display:flex; gap:8px; justify-content:space-between; align-items:center;}
+  .export-btn{background:#e6eef8; border-radius:10px; padding:8px 10px;}
+  canvas{width:100%; height:160px;}
+  /* Radio button interaction styles */
+  #quickAddMoneyModal input[type="radio"]:checked + span {
+    color: #10b981;
+    font-weight: 600;
+  }
+  #quickAddMoneyModal label:has(input[type="radio"]:checked) {
+    border-color: #10b981 !important;
+    background: #ecfdf5 !important;
+  }
+  #quickAddMoneyModal input[type="number"]:focus {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.1) !important;
+  }
+  /* New styles for additional tabs */
+  .main-tabs {display: flex; gap: 8px; margin-bottom: 12px; grid-column: 1/3;}
+  .main-tab {padding: 8px 12px; border-radius: 12px; background: #f3f7fb; cursor: pointer;}
+  .main-tab.active {background: white; box-shadow: 0 4px 10px rgba(15,23,42,0.06);}
+  .daily-expense-table {width: 100%; border-collapse: collapse; margin-top: 10px;}
+  .daily-expense-table th, .daily-expense-table td {padding: 8px; text-align: left; border-bottom: 1px solid #f1f6fb;}
+  .daily-expense-table th {font-size: 13px; color: var(--sub);}
+  /* Add to your <style> section */
+  
+  /* responsive for mobile view */
+  @media (max-width: 600px) {
+    .app {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 14px !important;
+      padding: 10px !important;
+      max-width: 100vw !important;
+    }
+    .header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 10px !important;
+      grid-column: auto !important;
+    }
+    .balances {
+      display: flex !important;
+      gap: 10px !important;
+      overflow-x: auto !important;
+      width: 100% !important;
+      padding-bottom: 6px !important;
+    }
+    .balance-pill {
+      flex: 1 0 auto !important;
+      min-width: 120px !important;
+    }
+    /* Remove floating blue bubble for Save button in mobile view */
+    .big-button {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      font-size: inherit !important;
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 6px 12px rgba(59,130,246,0.18) !important;
+      margin-right: 8px !important;
+    }
+    .row.controls {
+      display: flex !important;
+      flex-direction: row !important;
+      gap: 8px !important;
+      justify-content: flex-start !important;
+    }
+    .main-tabs {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      justify-content: space-around !important;
+      background: white !important;
+      border-top: 1px solid #e6eef8 !important;
+      padding: 12px 0 !important;
+      z-index: 1000 !important;
+      margin-bottom: 0 !important;
+      grid-column: auto !important;
+      box-shadow: 0 -2px 12px rgba(15,23,42,0.04);
+      display: flex !important;
+    }
+    .main-tab {
+      flex: 1 !important;
+      text-align: center !important;
+      font-size: 14px !important;
+      padding: 10px 0 !important;
+      color: #64748b !important;
+      background: #f3f7fb !important;
+      font-weight: 500 !important;
+      border-radius: 12px !important;
+      transition: background 0.2s, color 0.2s;
+    }
+    .main-tab.active {
+      background: #3b82f6 !important;
+      color: #fff !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 8px rgba(59,130,246,0.10) !important;
+    }
+    .card {
+      padding: 14px !important;
+      border-radius: 14px !important;
+    }
+    .txn {
+      padding: 12px !important;
+      gap: 10px !important;
+    }
+    .txn .icon {
+      width: 38px !important;
+      height: 38px !important;
+      font-size: 16px !important;
+    }
+    body {
+      padding-bottom: 100px !important; /* more space for bottom nav */
+    }
+  .footer-actions {
+    margin-bottom: 100px !important;
+  }
+  /* Add Money button mobile styling */
+  #addMoneyBtn {
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 8px !important;
+  }
+  /* Add Money modal mobile styling */
+  #quickAddMoneyModal > div {
+    margin: 20px !important;
+    padding: 20px !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+  #quickAddMoneyModal .radio-group {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  #quickAddMoneyModal .radio-group label {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="main">Main</div>
+    <div class="main-tab" data-tab="daily">Records</div>
+  </div>
+
+  <div class="header" style="grid-column:1/3">
+    <div>
+      <h1>Pocket Track</h1>
+      <div style="color:var(--sub); font-size:13px">Quickly record & manage daily expenses</div>
+    </div>
+    <div class="balances">
+      <div class="balance-pill">
+        <h3>Card Balance</h3>
+        <p id="cardBalance">1,250.00</p>
+      </div>
+      <div class="balance-pill">
+        <h3>Cash Balance</h3>
+        <p id="cashBalance">560.50</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Tab Content -->
+  <div class="card main-tab-content" id="mainTab">
+    <h3 style="margin-top:0">Add Expense</h3>
+    <form id="expenseForm">
+      <div class="row">
+        <label>Date</label>
+        <input type="date" id="expenseDate">
+      </div>
+      <div class="row">
+        <label>Category</label>
+        <select id="category">
+          <option selected>Food</option>
+          <option>Drink</option>
+          <option>Travel</option>
+          <option>Shopping</option>
+          <option>Games</option>
+          <option>Cinema</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Amount</label>
+        <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
+      </div>
+      <div class="row">
+        <label>Payment method</label>
+        <div class="radio-group">
+          <label><input type="radio" name="method" value="card" checked> Card</label>
+          <label><input type="radio" name="method" value="cash"> Cash</label>
+        </div>
+      </div>
+      <div class="row controls">
+        <button class="big-button" id="saveExpense" type="submit">Save</button>
+        <button type="button" class="small-btn" id="clearForm">Clear</button>
+      </div>
+    </form>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <h3 style="margin-bottom:8px">Transfers (Cash ↔ Card)</h3>
+    <div>
+      <label>Amount</label>
+      <input type="number" id="transferAmount" placeholder="0.00" step="0.01" min="0">
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="small-btn" id="withdrawBtn">Withdraw (Card → Cash)</button>
+        <button class="small-btn" id="depositBtn">Deposit (Cash → Card)</button>
+      </div>
+    </div>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <h3 style="margin:0 0 10px 0">Add Money</h3>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button class="big-button" id="addMoneyBtn" style="background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 6px 12px rgba(16,185,129,0.18);">
+        💰 Add Money
+      </button>
+    </div>
+
+  <h3 style="margin:0 0 10px 0">Recent</h3>
+    <div class="filters">
+      <select id="filterCategory"><option value="">All categories</option></select>
+      <select id="filterMethod"><option value="">All methods</option><option value="card">Card</option><option value="cash">Cash</option></select>
+      <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:110px;">
+        <label for="filterDate" style="font-size:13px; color:var(--sub); margin-bottom:0;">Date</label>
+        <div style="display:flex; align-items:center; gap:6px; width:100%;">
+          <input type="date" id="filterDate" style="padding:8px; border-radius:8px; border:1px solid #e6eef8; width:100%;">
+          <button class="small-btn" id="clearFilters" style="margin-top:0;">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div class="recent-list" id="recentList"></div>
+  </div>
+
+  <!-- Records Tab Content -->
+  <div class="card main-tab-content" id="dailyTab" style="display:none; grid-column:1/3">
+    <h3 style="margin-top:0">Records</h3>
+    <div id="dailyExpensesContainer"></div>
+    <!-- Add this for Money Deposits table -->
+    <h3 style="margin-top:18px">Money Deposits</h3>
+    <div id="dailyDepositsContainer"></div>
+  </div>
+
+  <!-- Add Money Tab Content -->
+  
+
+  <!-- Right column: Reports -->
+  <div class="card" id="rightCol">
+    <h3 style="margin-top:0">Reports</h3>
+
+  <!-- Summary box removed per user request; pie chart and legend remain below -->
+
+    <div class="summary-tabs" role="tablist">
+      <div class="tab active" data-range="daily">Daily</div>
+      <div class="tab" data-range="weekly">Weekly</div>
+      <div class="tab" data-range="monthly">Monthly</div>
+    </div>
+
+    <div>
+
+      <canvas id="pieChart"></canvas>
+      <div style="display:flex; justify-content:space-between; margin-top:8px;">
+        <div><strong>Total Expense</strong><div id="totalSpend" style="color:var(--sub)">0.00</div></div>
+        <div>
+          <div style="font-size:13px; color:var(--sub)">Legend</div>
+          <div id="legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Management Section (moved below pie chart/legend) -->
+    <div id="categoryManager" style="margin:18px 0 10px 0; padding:12px 0; border-top:1px solid #f1f6fb; border-bottom:1px solid #f1f6fb;">
+      <h4 style="margin:0 0 8px 0; font-size:15px; color:var(--sub);">Manage Categories</h4>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <input id="newCategoryInput" type="text" placeholder="Add new category..." style="padding:7px 10px; border-radius:8px; border:1px solid #e6eef8; font-size:14px;">
+        <button id="addCategoryBtn" class="small-btn">Add</button>
+  <button id="removeCategoryBtn" class="small-btn" style="background:#ef4444; color:white;">Remove</button>
+  <button id="moveUpCategoryBtn" class="small-btn">↑</button>
+  <button id="moveDownCategoryBtn" class="small-btn">↓</button>
+      </div>
+      <div id="categoryList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <div id="categoryMsg" style="color:#ef4444; font-size:13px; margin-top:6px;"></div>
+    </div>
+
+    <hr style="border:none; height:1px; background:#f1f6fb; margin:14px 0">
+
+    <div class="footer-actions">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="small-btn" id="startImport">Import CSV</button>
+        <button class="export-btn" id="exportCSV">Export CSV</button>
+        <button class="small-btn" id="resetAll">Reset All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal (lightweight) -->
+<div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Edit Expense</h3>
+    <form id="editForm">
+      <div class="row"><label>Amount</label><input type="number" id="editAmount" step="0.01" min="0" required></div>
+      <div class="row"><label>Category</label><select id="editCategory"></select></div>
+      <div class="row"><label>Date</label><input type="date" id="editDate"></div>
+      <div class="row"><label>Method</label>
+        <div class="radio-group">
+          <label><input type="radio" name="editMethod" value="card"> Card</label>
+          <label><input type="radio" name="editMethod" value="cash"> Cash</label>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="small-btn" id="cancelEdit">Cancel</button>
+        <button class="big-button" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Password Modal for Reset -->
+<div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Reset All Data</h3>
+    <p style="font-size:14px; color:var(--sub); margin-top:0">Enter password to reset all data:</p>
+    <input type="password" id="resetPassword" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; margin-bottom:12px;" placeholder="Password">
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button type="button" class="small-btn" id="cancelReset">Cancel</button>
+      <button class="big-button" id="confirmReset">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal for CSV Import -->
+<div id="importPasswordModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Import CSV</h3>
+    <div id="importStep1">
+      <p style="font-size:14px; color:var(--sub); margin-top:0">Enter password to continue:</p>
+      <input type="password" id="importPassword" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; margin-bottom:12px;" placeholder="Password">
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="small-btn" id="cancelImport">Cancel</button>
+        <button class="big-button" id="verifyImportPassword">Continue</button>
+      </div>
+    </div>
+    <div id="importStep2" style="display:none">
+      <p style="font-size:14px; color:var(--sub); margin-top:0">Select CSV file to import:</p>
+      <input type="file" id="importCSV" accept=".csv" style="display:block; margin:12px 0; width:100%">
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="small-btn" id="cancelImport2">Cancel</button>
+        <button class="big-button" id="confirmImport" disabled>Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal for CSV Export -->
+<div id="exportPasswordModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:14px; padding:16px; width:90%; max-width:420px;">
+    <h3 style="margin-top:0">Export CSV</h3>
+    <div id="exportStep1">
+      <p style="font-size:14px; color:var(--sub); margin-top:0">Enter password to continue:</p>
+      <input type="password" id="exportPassword" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e6eef8; margin-bottom:12px;" placeholder="Password">
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="small-btn" id="cancelExport">Cancel</button>
+        <button class="big-button" id="verifyExportPassword">Continue</button>
+      </div>
+    </div>
+    <div id="exportStep2" style="display:none">
+      <p style="font-size:14px; color:var(--sub); margin-top:0">Click Export to download the CSV file:</p>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+        <button type="button" class="small-btn" id="cancelExport2">Cancel</button>
+        <button class="big-button" id="confirmExport">Export</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="quickAddMoneyModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.45); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:16px; padding:24px; width:90%; max-width:380px; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="width:60px; height:60px; background:linear-gradient(135deg, #10b981, #059669); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:24px;">💰</div>
+      <h3 style="margin:0; color:#111827; font-size:20px; font-weight:700;">Add Money</h3>
+      <p style="margin:4px 0 0; color:#6b7280; font-size:14px;">Choose where to add your money</p>
+    </div>
+    <form id="quickAddMoneyForm">
+      <div class="row">
+        <label style="font-weight:600; color:#374151; margin-bottom:8px;">Add to</label>
+        <div class="radio-group" style="gap:16px; margin-top:8px;">
+          <label style="display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid #e5e7eb; border-radius:12px; cursor:pointer; transition:all 0.2s; background:#f9fafb;">
+            <input type="radio" name="quickAddMethod" value="card" checked style="margin:0;">
+            <span style="font-weight:500;">💳 Card</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid #e5e7eb; border-radius:12px; cursor:pointer; transition:all 0.2s; background:#f9fafb;">
+            <input type="radio" name="quickAddMethod" value="cash" style="margin:0;">
+            <span style="font-weight:500;">💵 Cash</span>
+          </label>
+        </div>
+      </div>
+      <div class="row">
+        <label style="font-weight:600; color:#374151; margin-bottom:8px;">Amount</label>
+        <input type="number" id="quickAddAmount" step="0.01" min="0" placeholder="0.00" required style="font-size:18px; font-weight:600; text-align:center; padding:16px; border:2px solid #e5e7eb; border-radius:12px; background:#f9fafb; transition:all 0.2s;">
+      </div>
+      <div class="row controls" style="margin-top:20px; gap:12px;">
+        <button class="big-button" type="submit" style="flex:1; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 6px 12px rgba(16,185,129,0.18); font-size:16px; padding:14px;">Add Money</button>
+        <button type="button" class="small-btn" id="quickAddCancel" style="flex:1; background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; font-size:16px; padding:14px;">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Move Reports above Recent in mobile view
+function moveReportsForMobile() {
+  if (window.innerWidth <= 600) {
+    var mainTab = document.getElementById('mainTab');
+    var rightCol = document.getElementById('rightCol');
+    if (mainTab && rightCol && mainTab.parentNode) {
+      // Find the Recent section (h3 with 'Recent')
+      var recentH3 = mainTab.querySelector('h3[style*="margin:0 0 10px 0"]');
+      if (recentH3) {
+        // Insert rightCol before Recent
+        mainTab.insertBefore(rightCol, recentH3);
+      }
+    }
+  } else {
+    // Restore rightCol to its original place if needed (desktop)
+    var app = document.querySelector('.app');
+    var rightCol = document.getElementById('rightCol');
+    if (app && rightCol && !rightCol.nextElementSibling) {
+      app.appendChild(rightCol);
+    }
+  }
+}
+window.addEventListener('DOMContentLoaded', moveReportsForMobile);
+window.addEventListener('resize', moveReportsForMobile);
+/* Storage keys & initial state */
+const STORAGE_KEY = 'pockettrack_v1';
+const RESET_PASSWORD = "Y0uM3N0w"; // Default password for reset
+const ORIGINAL_CATEGORIES = ['Food','Drink','Travel','Shopping','Games','Cinema','Other'];
+let state = {
+  balances: { card: 0, cash: 0 },
+  expenses: [], // {id, amount, category, method, dateISO, type: 'expense' or 'add-money'}
+  addedMoney: [], // {id, amount, method, dateISO}
+  categories: [...ORIGINAL_CATEGORIES] // user categories will be added here
+};
+
+/* Utilities */
+const $ = id => document.getElementById(id);
+const fmt = n => {
+  n = Number(n || 0);
+  if (n < 0) {
+    // Instead of alerting everywhere, just return 0.00 for negative numbers
+    return '0.00';
+  }
+  return n.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const saveState = ()=> localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+const loadState = ()=> {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) try{ state = JSON.parse(raw); } catch(e){}
+  // ensure structures
+  if(!state.balances) state.balances = {card:0,cash:0};
+  if(!state.expenses) state.expenses = [];
+  if(!state.addedMoney) state.addedMoney = [];
+  if(!state.categories) state.categories = [...ORIGINAL_CATEGORIES];
+};
+const round = n => Math.round((n+Number.EPSILON)*100)/100;
+
+// Robust number parsing: handle commas, non-breaking spaces, and trimmed input
+function parseNumber(s){
+  if(s === null || s === undefined) return NaN;
+  if(typeof s === 'number') return s;
+  let t = String(s).trim();
+  if(t === '') return NaN;
+  // remove NBSP and thin spaces
+  t = t.replace(/\u00A0/g,'').replace(/\u2009/g,'').replace(/\u2007/g,'');
+
+  const hasDot = t.indexOf('.') !== -1;
+  const hasComma = t.indexOf(',') !== -1;
+
+  if(hasDot && hasComma){
+    // e.g. 1.234,56 (dot thousands, comma decimal) -> remove dots, comma -> dot
+    t = t.replace(/\./g,'').replace(/,/g,'.');
+  } else if(hasComma && !hasDot){
+    // ambiguous: decide by fractional length
+    const parts = t.split(',');
+    if(parts.length>1 && parts[1].length === 3){
+      // probably thousands like 1,234 -> remove commas
+      t = t.replace(/,/g,'');
+    } else {
+      // treat comma as decimal separator
+      t = t.replace(/,/g,'.');
+    }
+  } else if(hasDot && !hasComma){
+    // If dot is used as thousands separator like '1.590' (three digits after dot), and not as decimal
+    const parts = t.split('.');
+    if(parts.length>1 && parts[1].length === 3 && parts[0].length >=1){
+      // ambiguous: if there's exactly one dot and three digits after, assume thousands sep and remove dot
+      if(parts.length === 2) {
+        t = t.replace(/\./g,'');
+      }
+    }
+  }
+
+  // remove currency symbols and letters (keep digits, dot, minus)
+  t = t.replace(/[^0-9.\-]/g,'');
+  if(t === '' || t === '-' ) return NaN;
+  const v = parseFloat(t);
+  return isNaN(v) ? NaN : v;
+}
+
+/* Initialize UI */
+function init(){
+  loadState();
+  bindEvents();
+  renderAll();
+}
+
+function bindEvents(){
+  $('expenseForm').addEventListener('submit', onSaveExpense);
+  $('clearForm').addEventListener('click', clearForm);
+  $('quickAddCancel').addEventListener('click', () => {
+    $('quickAddMoneyModal').style.display = 'none';
+  });
+  $('quickAddMoneyForm').addEventListener('submit', onQuickAddMoney);
+  $('addMoneyBtn').addEventListener('click', () => {
+    $('quickAddAmount').value = ''; // Clear the amount field
+    $('quickAddMoneyModal').style.display = 'flex';
+  });
+  $('withdrawBtn').addEventListener('click', doWithdraw);
+  $('depositBtn').addEventListener('click', doDeposit);
+  $('filterCategory').addEventListener('change', renderRecent);
+  $('filterMethod').addEventListener('change', renderRecent);
+  $('filterDate').addEventListener('change', renderRecent);
+  $('clearFilters').addEventListener('click', ()=>{ $('filterCategory').value=''; $('filterMethod').value=''; $('filterDate').value=''; renderRecent(); });
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', onTab));
+  $('exportCSV').addEventListener('click', exportCSV);
+  // Import CSV handling
+  // Import CSV handling
+  $('startImport').addEventListener('click', function() {
+    $('importPasswordModal').style.display = 'flex';
+    $('importStep1').style.display = 'block';
+    $('importStep2').style.display = 'none';
+    $('importPassword').value = '';
+    if($('importCSV')) $('importCSV').value = '';
+    $('confirmImport').disabled = true;
+    pendingImportFile = null;
+  });
+  
+  $('verifyImportPassword').addEventListener('click', function() {
+    const password = $('importPassword').value;
+    if (password === RESET_PASSWORD) {
+      $('importStep1').style.display = 'none';
+      $('importStep2').style.display = 'block';
+    } else {
+      alert('Incorrect password.');
+      $('importPassword').value = '';
+    }
+  });
+
+  $('importCSV').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      pendingImportFile = file;
+      $('confirmImport').disabled = false;
+    } else {
+      pendingImportFile = null;
+      $('confirmImport').disabled = true;
+    }
+  });
+  
+  ['cancelImport', 'cancelImport2'].forEach(id => {
+    $(id).addEventListener('click', function() {
+      $('importPasswordModal').style.display = 'none';
+      pendingImportFile = null;
+      if($('importCSV')) $('importCSV').value = '';
+    });
+  });
+  
+  $('confirmImport').addEventListener('click', function() {
+    if (pendingImportFile) {
+      handleImportFile(pendingImportFile);
+      $('importPasswordModal').style.display = 'none';
+      pendingImportFile = null;
+    }
+  });
+
+  // Export CSV handling
+  $('exportCSV').addEventListener('click', function() {
+    $('exportPasswordModal').style.display = 'flex';
+    $('exportStep1').style.display = 'block';
+    $('exportStep2').style.display = 'none';
+    $('exportPassword').value = '';
+  });
+
+  $('verifyExportPassword').addEventListener('click', function() {
+    const password = $('exportPassword').value;
+    if (password === RESET_PASSWORD) {
+      $('exportStep1').style.display = 'none';
+      $('exportStep2').style.display = 'block';
+    } else {
+      alert('Incorrect password.');
+      $('exportPassword').value = '';
+    }
+  });
+
+  ['cancelExport', 'cancelExport2'].forEach(id => {
+    $(id).addEventListener('click', function() {
+      $('exportPasswordModal').style.display = 'none';
+    });
+  });
+
+  $('confirmExport').addEventListener('click', function() {
+    $('exportPasswordModal').style.display = 'none';
+    // Call the existing exportCSV function
+    exportCSVWithoutPrompt();
+  });
+  
+  $('resetAll').addEventListener('click', showPasswordModal);
+  
+
+  // Main tab navigation (fix: highlight Add Money tab too)
+  document.querySelectorAll('.main-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const tabName = tab.getAttribute('data-tab');
+      // Hide all tab contents
+      document.querySelectorAll('.main-tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      // Show selected tab content
+      const tabContent = document.getElementById(tabName + 'Tab');
+      if (tabContent) tabContent.style.display = 'block';
+
+      // Update active tab (fix: highlight all tabs)
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Render specific content if needed
+      if (tabName === 'daily') {
+        renderDailyExpenses();
+        $('rightCol').style.display = 'none'; // Hide reports column
+      } else {
+        $('rightCol').style.display = 'block'; // Show reports column for main tab
+      }
+
+      // Scroll to top on mobile when switching tabs
+      if (window.innerWidth <= 600) {
+        window.scrollTo(0, 0);
+      }
+    });
+  });
+
+  // Show Main tab by default on load
+  document.querySelectorAll('.main-tab-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  document.getElementById('mainTab').style.display = 'block';
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.main-tab[data-tab="main"]').classList.add('active');
+
+  // Edit modal handlers
+  $('cancelEdit').addEventListener('click', ()=> $('editModal').style.display='none');
+  $('editForm').addEventListener('submit', onSaveEdit);
+  
+  // Password modal handlers
+  $('cancelReset').addEventListener('click', ()=> $('passwordModal').style.display='none');
+  $('confirmReset').addEventListener('click', confirmReset);
+}
+
+/* Render everything */
+function renderAll(){
+  $('cardBalance').textContent = fmt(state.balances.card);
+  $('cashBalance').textContent = fmt(state.balances.cash);
+  populateCategoryFilter();
+  renderRecent();
+  renderSummary();
+  renderCategoryManager();
+  saveState();
+}
+
+/* Populate filter categories (unique categories) */
+function updateAllCategoryDropdowns() {
+  // Use state.categories for user and original categories
+  const set = new Set(state.categories);
+  state.expenses.forEach(e=> set.add(e.category));
+  // Add Expense form
+  const addCat = $('category');
+  if (addCat) {
+    addCat.innerHTML = '';
+    for(const s of set) {
+      if (s === 'TopUp') continue; // Hide TopUp from Add Expense
+      const o = document.createElement('option'); o.value = s; o.textContent = s; addCat.appendChild(o);
+    }
+    // Try to preserve selection if possible
+    if (state.categories.includes(addCat.value)) {
+      addCat.value = addCat.value;
+    } else {
+      addCat.value = state.categories[0] || '';
+    }
+  }
+  // Edit Expense modal
+  const editCat = $('editCategory');
+  if (editCat) {
+    editCat.innerHTML = '';
+    for(const s of set){ const o=document.createElement('option'); o.value=s; o.textContent=s; editCat.appendChild(o); }
+  }
+  // Filter dropdown
+  const sel = $('filterCategory');
+  if (sel) {
+    sel.innerHTML = '<option value="">All categories</option>';
+    for(const s of set) {
+      const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+    }
+  }
+}
+
+// For compatibility, keep populateCategoryFilter as a wrapper
+function populateCategoryFilter() {
+  updateAllCategoryDropdowns();
+}
+
+/* Recent list and filters */
+function renderRecent(){
+  const container = $('recentList'); container.innerHTML='';
+  const cat = $('filterCategory').value;
+  const method = $('filterMethod').value;
+  const dateFilter = $('filterDate').value;
+
+  // Sort by date descending (latest first)
+  const list = state.expenses.slice().sort((a,b)=> new Date(b.dateISO)- new Date(a.dateISO));
+  const filtered = list.filter(e=>{
+    // include transfers but allow filtering; method filter should match methodDisplay too
+    if(cat && e.category !== cat) return false;
+    if(method){
+      const m = (e.method || '').toString();
+      // Prefer linked id matches for addedMoney (reliable)
+      let md = '';
+      if(e.linkedAddId){
+        const am = state.addedMoney.find(a => a.id === e.linkedAddId);
+        if(am) md = am.methodDisplay || am.method;
+      }
+      if(!md){
+        const am = state.addedMoney.find(a => a.linkedTxId === e.id);
+        if(am) md = am.methodDisplay || am.method;
+      }
+      // Fallback: match by date and amount as before
+      if(!md){
+        const am2 = state.addedMoney.find(a => new Date(a.dateISO).toISOString() === new Date(e.dateISO).toISOString() && (a.amount === Math.abs(e.amount) || a.amount === e.amount));
+        if(am2) md = am2.methodDisplay || am2.method;
+      }
+      if(!(m === method || md === method)) return false;
+    }
+    if(dateFilter){
+      const d = new Date(e.dateISO); const f = new Date(dateFilter);
+      if(d.getFullYear() !== f.getFullYear() || d.getMonth() !== f.getMonth() || d.getDate() !== f.getDate()) return false;
+    }
+    return true;
+  });
+
+  if(filtered.length === 0){
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No transactions yet.</div>';
+    return;
+  }
+
+  filtered.forEach(tx=>{
+    const div = document.createElement('div'); div.className='txn';
+    const icon = document.createElement('div'); icon.className='icon';
+  icon.style.background = tx.method === 'card' ? '#eef4ff' : '#fff3e6';
+  icon.textContent = tx.category[0] || '•';
+
+    const info = document.createElement('div'); info.className='info';
+    const d = new Date(tx.dateISO);
+    // If this is a transfer or has a methodDisplay nearby, show direction in the method
+    let displayMethod = tx.method;
+    // Prefer linked id matches for transfers/add-money
+    if(tx.linkedAddId){
+      const am = state.addedMoney.find(a => a.id === tx.linkedAddId);
+      if(am) displayMethod = am.methodDisplay || am.method;
+    } else {
+      const am = state.addedMoney.find(a => a.linkedTxId === tx.id);
+      if(am) displayMethod = am.methodDisplay || am.method;
+      else {
+        // fallback to date/amount heuristic
+        const am2 = state.addedMoney.find(a => new Date(a.dateISO).toISOString() === new Date(tx.dateISO).toISOString() && (a.amount === Math.abs(tx.amount) || a.amount === tx.amount));
+        if(am2) displayMethod = am2.methodDisplay || am2.method;
+      }
+    }
+    info.innerHTML = `<div style="font-weight:600">${tx.category}</div><div class="meta">${d.toLocaleString()}</div>`;
+
+    const amount = document.createElement('div'); amount.style.textAlign='right';
+  amount.innerHTML = `<div class="amount">${tx.amount<0? fmt(Math.abs(tx.amount)) : fmt(tx.amount)}</div><div class="meta">${displayMethod}</div>`;
+
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.flexDirection='column'; actions.style.gap='6px';
+    const editBtn = document.createElement('button'); editBtn.className='small-btn'; editBtn.textContent='Edit'; editBtn.onclick = ()=> openEdit(tx.id);
+    const delBtn = document.createElement('button'); delBtn.className='small-btn'; delBtn.textContent='Delete'; delBtn.onclick = ()=> deleteTxn(tx.id);
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    div.appendChild(icon); div.appendChild(info); div.appendChild(amount); div.appendChild(actions);
+    container.appendChild(div);
+  });
+}
+
+/* Save expense */
+function onSaveExpense(e){
+  e.preventDefault();
+  const amt = parseNumber($('amount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  if(amt < 0){ alert('Negative numbers are not allowed.'); return; }
+  const rAmt = round(amt);
+  const category = $('category').value;
+  const method = document.querySelector('input[name="method"]:checked').value;
+  // Check balance before allowing expense
+  if(method === 'card' && state.balances.card < rAmt){
+    alert('Insufficient card balance.');
+    return;
+  }
+  if(method === 'cash' && state.balances.cash < rAmt){
+    alert('Insufficient cash balance.');
+    return;
+  }
+  const dateInput = $('expenseDate').value;
+  let dateISO;
+  if(dateInput){
+    const now = new Date();
+    const [yyyy, mm, dd] = dateInput.split('-');
+    now.setFullYear(Number(yyyy));
+    now.setMonth(Number(mm)-1);
+    now.setDate(Number(dd));
+    dateISO = now.toISOString();
+  } else {
+    dateISO = new Date().toISOString();
+  }
+
+  // create expense object (store as negative amount for spending)
+  const txn = {
+    id: 'tx_'+Date.now(),
+    amount: -Math.abs(rAmt),
+    category, method,
+    dateISO,
+    type: 'expense'
+  };
+
+  // adjust balances
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + txn.amount); // txn.amount negative
+  } else {
+    state.balances.cash = round(state.balances.cash + txn.amount);
+  }
+
+  // Prevent negative balances after transaction
+  if(state.balances.card < 0 || state.balances.cash < 0){
+    alert('Transaction would result in negative balance.');
+    // Revert balance change
+    if(method === 'card') state.balances.card = round(state.balances.card - txn.amount);
+    else state.balances.cash = round(state.balances.cash - txn.amount);
+    return;
+  }
+
+  state.expenses.push(txn);
+  saveState();
+  renderAll();
+  clearForm();
+}
+
+/* Add money function (now uses date from input) */
+function onAddMoney(e) {
+  e.preventDefault();
+  const amt = parseNumber($('addMoneyAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  const rAmt = round(amt);
+  const method = document.querySelector('input[name="addMoneyMethod"]:checked').value;
+  const dateInput = $('addMoneyDate').value;
+  let dateISO;
+  if(dateInput){
+    const now = new Date();
+    const [yyyy, mm, dd] = dateInput.split('-');
+    now.setFullYear(Number(yyyy));
+    now.setMonth(Number(mm)-1);
+    now.setDate(Number(dd));
+    dateISO = now.toISOString();
+  } else {
+    dateISO = new Date().toISOString();
+  }
+
+  // Add to balance
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + rAmt);
+  } else {
+    state.balances.cash = round(state.balances.cash + rAmt);
+  }
+
+  // Use a shared base id so we can link addedMoney <> expense for reliable edits
+  const base = Date.now();
+  const addId = 'add_'+base;
+  const txId = 'tx_'+base;
+
+  // Record the transaction (linked)
+  const addMoneyTxn = { id: addId, amount: rAmt, method, dateISO, type: 'add-money', linkedTxId: txId };
+  state.addedMoney.push(addMoneyTxn);
+  // Also record in expenses list as an add-money record (positive amount)
+  state.expenses.push({ id: txId, amount: rAmt, category: 'TopUp', method, dateISO, type: 'add-money', linkedAddId: addId });
+
+  saveState();
+  renderAll();
+  $('addMoneyAmount').value = '';
+  $('addMoneyDate').value = '';
+  alert(`${fmt(amt)} added to ${method}`);
+  
+}
+
+/* Quick Add Money function */
+function onQuickAddMoney(e) {
+  e.preventDefault();
+  const amt = parseNumber($('quickAddAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter a valid amount'); return; }
+  const rAmt = round(amt);
+  const method = document.querySelector('input[name="quickAddMethod"]:checked').value;
+  const dateISO = new Date().toISOString();
+
+  // Add to balance
+  if(method === 'card'){
+    state.balances.card = round(state.balances.card + rAmt);
+  } else {
+    state.balances.cash = round(state.balances.cash + rAmt);
+  }
+
+  // Record the transaction with a shared id for linking
+  const base = Date.now();
+  const addId = 'add_'+base;
+  const txId = 'tx_'+base;
+  const addMoneyTxn = { id: addId, amount: rAmt, method, dateISO, type: 'add-money', linkedTxId: txId };
+
+  state.addedMoney.push(addMoneyTxn);
+  state.expenses.push({ id: txId, amount: rAmt, category: 'TopUp', method, dateISO, type: 'add-money', linkedAddId: addId });
+
+  saveState();
+  renderAll();
+  $('quickAddMoneyModal').style.display = 'none';
+  alert(`${fmt(amt)} added to ${method}`);
+}
+
+
+
+/* Render records tab */
+function renderDailyExpenses() {
+  const container = $('dailyExpensesContainer');
+  container.innerHTML = '';
+  
+  // Group expenses by date
+  const expensesByDate = {};
+  state.expenses.forEach(expense => {
+  if (expense.type === 'transfer') return; // Skip transfers from the records table
+  if (expense.amount >= 0) return; // Skip positive amounts (added money)
+    
+    const date = new Date(expense.dateISO);
+    const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    if (!expensesByDate[dateStr]) {
+      expensesByDate[dateStr] = [];
+    }
+    
+    expensesByDate[dateStr].push(expense);
+  });
+
+  // Sort dates descending (latest first)
+  const sortedDates = Object.keys(expensesByDate).sort((a, b) => {
+    // Convert dd/mm/yyyy to yyyy-mm-dd for comparison
+    const [da, ma, ya] = a.split('/').map(Number);
+    const [db, mb, yb] = b.split('/').map(Number);
+    const dateA = new Date(ya, ma - 1, da);
+    const dateB = new Date(yb, mb - 1, db);
+    return dateB - dateA;
+  });
+  
+  if (sortedDates.length === 0) {
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No expenses recorded yet.</div>';
+  } else {
+    const table = document.createElement('table');
+    table.className = 'daily-expense-table';
+    const tbody = document.createElement('tbody');
+
+    // Create table for each date (latest first)
+    for (const date of sortedDates) {
+      // Sort expenses within the day by time descending (latest first)
+      const dateExpenses = expensesByDate[date].slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+      const total = dateExpenses.reduce((sum, expense) => sum + Math.abs(expense.amount), 0);
+      
+      const headerRow = document.createElement('tr');
+      headerRow.innerHTML = `
+        <th colspan="4" style="background-color: #f3f7fb; font-weight: 600;">${date} - Total: ${fmt(total)}</th>
+      `;
+      tbody.appendChild(headerRow);
+      
+      // Add each expense (latest first)
+      dateExpenses.forEach(expense => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.category}</td>
+          <td>${expense.method}</td>
+          <td>${new Date(expense.dateISO).toLocaleTimeString()}</td>
+          <td style="text-align:right">${fmt(Math.abs(expense.amount))}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+    table.appendChild(tbody);
+    container.appendChild(table);
+  }
+  
+  // --- ADD THIS: Render Money Deposits table below ---
+  renderDailyDeposits();
+}
+
+/* Render Money Deposits in Daily Tab */
+function renderDailyDeposits() {
+  const container = $('dailyDepositsContainer');
+  container.innerHTML = '';
+
+  // Get all deposits (from state.addedMoney)
+  let deposits = state.addedMoney.slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+  // Deduplicate deposits for display (in case the same deposit was recorded twice)
+  const seen = new Set();
+  deposits = deposits.filter(dep => {
+    const key = `${dep.dateISO}|${dep.amount}|${dep.methodDisplay?dep.methodDisplay:dep.method}`;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  if (deposits.length === 0) {
+    container.innerHTML = '<div style="color:var(--sub); padding:10px">No deposits yet.</div>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'daily-expense-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Method</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${deposits.map(dep => `
+        <tr>
+          <td>${new Date(dep.dateISO).toLocaleString()}</td>
+          <td>${dep.methodDisplay ? dep.methodDisplay : dep.method}</td>
+          <td style="color:green; text-align:right;">${fmt(dep.amount)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+  container.appendChild(table);
+}
+
+/* Edit flow */
+let editingId = null;
+function openEdit(id){
+  const tx = state.expenses.find(t=>t.id===id); if(!tx) return;
+  editingId = id;
+  $('editAmount').value = Math.abs(tx.amount);
+  // If this is a transfer, limit category choices to Withdraw/Deposit only
+  const editCatSel = $('editCategory');
+  const categoryRow = editCatSel.closest('.row'); // Get the category field's container
+  
+  if(tx.type === 'transfer'){
+    editCatSel.innerHTML = '';
+    const o1 = document.createElement('option'); o1.value = 'Withdraw'; o1.textContent = 'Withdraw'; editCatSel.appendChild(o1);
+    const o2 = document.createElement('option'); o2.value = 'Deposit'; o2.textContent = 'Deposit'; editCatSel.appendChild(o2);
+    editCatSel.value = tx.category || 'Withdraw';
+    // hide method radios for transfers (method is implied by category)
+    const methodGroup = document.querySelector('#editForm .radio-group');
+    if(methodGroup) methodGroup.style.display = 'none';
+    categoryRow.style.display = ''; // Show category for transfers
+  } else if(tx.type === 'add-money') {
+    // Hide category for add-money/top-up transactions
+    categoryRow.style.display = 'none';
+    const methodGroup = document.querySelector('#editForm .radio-group');
+    if(methodGroup) methodGroup.style.display = '';
+  } else {
+    // populate full category list for regular expenses
+    populateCategoryFilter();
+    editCatSel.value = tx.category;
+    const methodGroup = document.querySelector('#editForm .radio-group');
+    if(methodGroup) methodGroup.style.display = '';
+    categoryRow.style.display = ''; // Show category for regular expenses
+  }
+  // populate date field with the TX date (yyyy-mm-dd) so it doesn't jump to now
+  try{
+    const d = new Date(tx.dateISO);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    $('editDate').value = `${yyyy}-${mm}-${dd}`;
+  }catch(err){ $('editDate').value = ''; }
+  document.querySelectorAll('input[name="editMethod"]').forEach(r=> r.checked = (r.value===tx.method));
+  $('editModal').style.display='flex';
+}
+function onSaveEdit(e){
+  e.preventDefault();
+  const tx = state.expenses.find(t=>t.id===editingId); if(!tx) return;
+  // capture original values
+  const origAmount = tx.amount;
+  const origMethod = tx.method;
+  const origDateISO = tx.dateISO;
+  const origType = tx.type;
+
+  // reverse original impact on balances
+  if(origType === 'transfer'){
+    // reverse sender
+    if(origMethod === 'card') state.balances.card = round(state.balances.card - origAmount);
+    else state.balances.cash = round(state.balances.cash - origAmount);
+    // reverse receiver (the other medium that previously received the funds)
+    const origReceive = origMethod === 'card' ? 'cash' : 'card';
+    if(origReceive === 'card') state.balances.card = round(state.balances.card - Math.abs(origAmount));
+    else state.balances.cash = round(state.balances.cash - Math.abs(origAmount));
+  } else {
+    if(origMethod==='card') state.balances.card = round(state.balances.card - origAmount);
+    else state.balances.cash = round(state.balances.cash - origAmount);
+  }
+
+  // read new values
+  const rawAmt = parseNumber($('editAmount').value);
+  const newCategory = $('editCategory').value;
+  let newMethod = document.querySelector('input[name="editMethod"]:checked') ? document.querySelector('input[name="editMethod"]:checked').value : null;
+  const dateInput = $('editDate').value;
+  // construct new dateISO: preserve original time-of-day if present
+  let newDateISO = origDateISO;
+  if(dateInput){
+    const base = new Date(origDateISO || new Date().toISOString());
+    const [yyyy,mm,dd] = dateInput.split('-');
+    base.setFullYear(Number(yyyy)); base.setMonth(Number(mm)-1); base.setDate(Number(dd));
+    newDateISO = base.toISOString();
+  }
+
+  // determine sign based on transaction type and use rounded amount
+  const rAmt = round(rawAmt);
+  let newAmount = 0;
+  if(origType === 'add-money') newAmount = Math.abs(rAmt);
+  else newAmount = -Math.abs(rAmt);
+
+  // If this is a transfer and the user is changing direction, ensure the new sender has enough funds
+  if(origType === 'transfer'){
+    const proposedSender = (newCategory === 'Withdraw') ? 'card' : 'cash';
+    const needed = Math.abs(newAmount);
+    if(round(state.balances[proposedSender]) < round(needed) || isNaN(state.balances[proposedSender])){
+      alert(`Insufficient ${proposedSender} balance to change transfer.`);
+      // restore original impact (reapply original transaction)
+      if(origType === 'transfer'){
+        // reapply sender
+        if(origMethod === 'card') state.balances.card = round(state.balances.card + origAmount);
+        else state.balances.cash = round(state.balances.cash + origAmount);
+        // reapply receiver
+        const origReceive = origMethod === 'card' ? 'cash' : 'card';
+        if(origReceive === 'card') state.balances.card = round(state.balances.card + Math.abs(origAmount));
+        else state.balances.cash = round(state.balances.cash + Math.abs(origAmount));
+      } else {
+        if(origMethod === 'card') state.balances.card = round(state.balances.card + origAmount);
+        else state.balances.cash = round(state.balances.cash + origAmount);
+      }
+      return;
+    }
+  }
+
+  // apply edits to tx
+  tx.amount = newAmount;
+  // For transfers, method is implied by category and should not be editable
+  if(tx.type === 'transfer'){
+    // Withdraw means sending from card to cash; tx.method should remain the sender (card)
+    if(newCategory === 'Withdraw') newMethod = 'card';
+    else if(newCategory === 'Deposit') newMethod = 'cash';
+    tx.method = newMethod; // store sender
+    tx.category = newCategory;
+  } else if(tx.type === 'add-money') {
+    // Preserve TopUp category for add-money transactions
+    tx.category = 'TopUp';
+    tx.method = newMethod;
+  } else {
+    tx.category = newCategory;
+    tx.method = newMethod;
+  }
+  tx.dateISO = newDateISO;
+
+  // update matching addedMoney entries when editing add-money or transfers
+  if(origType === 'add-money' || origType === 'transfer'){
+    // Prefer linked id match when available
+    let updated = false;
+    // If the expense had a linkedAddId, update that specific addedMoney
+    if(tx.linkedAddId){
+      const am = state.addedMoney.find(a => a.id === tx.linkedAddId);
+      if(am){
+        am.amount = Math.abs(newAmount);
+        am.dateISO = newDateISO;
+        if(origType === 'add-money'){
+          am.method = newMethod;
+          if(am.methodDisplay) delete am.methodDisplay;
+        }
+        if(origType === 'transfer'){
+          // tx.method denotes the sending side; update the receiving method/display
+          const send = newMethod;
+          const receive = send === 'card' ? 'cash' : 'card';
+          am.method = receive;
+          am.methodDisplay = `${send} -> ${receive}`;
+        }
+        updated = true;
+      }
+    }
+    // Or if any addedMoney points back to this tx via linkedTxId
+    if(!updated){
+      const am = state.addedMoney.find(a => a.linkedTxId === tx.id);
+      if(am){
+        am.amount = Math.abs(newAmount);
+        am.dateISO = newDateISO;
+        if(origType === 'add-money'){
+          am.method = newMethod;
+          if(am.methodDisplay) delete am.methodDisplay;
+        }
+        // If this was a transfer, update the receiving method and methodDisplay to match new direction
+        if(origType === 'transfer'){
+          // tx.method denotes the sending side in our model for transfers (card or cash)
+          const send = newMethod;
+          const receive = send === 'card' ? 'cash' : 'card';
+          am.method = receive;
+          am.methodDisplay = `${send} -> ${receive}`;
+        }
+        updated = true;
+      }
+    }
+    // Fallback: previous heuristics (match by date & amount)
+    if(!updated){
+      state.addedMoney.forEach(am => {
+        try{
+          if(new Date(am.dateISO).toISOString() === new Date(origDateISO).toISOString() && Math.abs(am.amount) === Math.abs(origAmount)){
+            am.amount = Math.abs(newAmount);
+            if(origType === 'add-money'){
+              am.method = newMethod;
+              if(am.methodDisplay) delete am.methodDisplay;
+            }
+            if(origType === 'transfer'){
+              // Update receiving method and display based on new sender (newMethod)
+              const send = newMethod;
+              const receive = send === 'card' ? 'cash' : 'card';
+              am.method = receive;
+              am.methodDisplay = `${send} -> ${receive}`;
+            }
+            am.dateISO = newDateISO;
+          }
+        }catch(e){}
+      });
+    }
+  }
+
+  // apply new impact on balances
+  if(tx.type === 'transfer'){
+    // sender is tx.method (tx.amount is negative); receiver gets positive amount
+    const send = tx.method;
+    const receive = send === 'card' ? 'cash' : 'card';
+    if(send === 'card') state.balances.card = round(state.balances.card + tx.amount);
+    else state.balances.cash = round(state.balances.cash + tx.amount);
+    // credit receiver
+    if(receive === 'card') state.balances.card = round(state.balances.card + Math.abs(tx.amount));
+    else state.balances.cash = round(state.balances.cash + Math.abs(tx.amount));
+  } else {
+    if(newMethod==='card') state.balances.card = round(state.balances.card + tx.amount);
+    else state.balances.cash = round(state.balances.cash + tx.amount);
+  }
+
+  editingId = null;
+  $('editModal').style.display='none';
+  saveState(); renderAll();
+}
+
+/* Delete */
+function deleteTxn(id){
+  if(!confirm('Delete this transaction?')) return;
+  const idx = state.expenses.findIndex(t=>t.id===id); if(idx<0) return;
+  const tx = state.expenses[idx];
+  
+  // Handle balance updates based on transaction type
+  if(tx.type === 'transfer') {
+    // For transfers, we need to reverse both the sender and receiver effects
+    if(tx.category === 'Withdraw') {
+      // Withdraw was card->cash, so restore card balance and remove from cash
+      state.balances.card = round(state.balances.card - tx.amount); // Add back to card (amount was negative)
+      state.balances.cash = round(state.balances.cash - Math.abs(tx.amount)); // Remove from cash
+    } else if(tx.category === 'Deposit') {
+      // Deposit was cash->card, so restore cash balance and remove from card
+      state.balances.cash = round(state.balances.cash - tx.amount); // Add back to cash (amount was negative)
+      state.balances.card = round(state.balances.card - Math.abs(tx.amount)); // Remove from card
+    }
+  } else {
+    // For regular transactions, just reverse the single balance effect
+    if(tx.method==='card') state.balances.card = round(state.balances.card - tx.amount);
+    else state.balances.cash = round(state.balances.cash - tx.amount);
+  }
+
+  // If this expense links to an addedMoney record, remove that as well
+  if(tx.linkedAddId){
+    const ai = state.addedMoney.findIndex(a => a.id === tx.linkedAddId);
+    if(ai >= 0) state.addedMoney.splice(ai,1);
+  } else {
+    // fallback: remove addedMoney entries that point back to this tx
+    const ai = state.addedMoney.findIndex(a => a.linkedTxId === tx.id);
+    if(ai >= 0) state.addedMoney.splice(ai,1);
+  }
+  state.expenses.splice(idx,1);
+  saveState(); renderAll();
+}
+
+/* Transfers */
+function doWithdraw(){
+  const amt = parseNumber($('transferAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter valid amount'); return; }
+  const rAmt = round(amt);
+  if(state.balances.card < rAmt){ alert('Insufficient card balance'); return; }
+  state.balances.card = round(state.balances.card - rAmt);
+  state.balances.cash = round(state.balances.cash + rAmt);
+  // record transfer as a transaction for history
+  const dateISO = new Date().toISOString();
+  // use shared id pair so edits can find the deposit row
+  const base = Date.now();
+  const txId = 'tx_'+base;
+  const addId = 'add_'+base;
+  // mark as transfer so it doesn't show in regular expense lists
+  state.expenses.push({ id: txId, amount:-rAmt, category:'Withdraw', method:'card', dateISO, type: 'transfer', linkedAddId: addId });
+  // Also add a deposit-style record so transfers appear in the Money Deposits table
+  state.addedMoney.push({ id: addId, amount: rAmt, method: 'cash', methodDisplay: 'card -> cash', dateISO, type: 'add-money', linkedTxId: txId });
+  saveState(); renderAll(); $('transferAmount').value='';
+}
+function doDeposit(){
+  const amt = parseNumber($('transferAmount').value);
+  if(isNaN(amt) || amt<=0){ alert('Enter valid amount'); return; }
+  const rAmt = round(amt);
+  if(state.balances.cash < rAmt){ alert('Insufficient cash balance'); return; }
+  state.balances.cash = round(state.balances.cash - rAmt);
+  state.balances.card = round(state.balances.card + rAmt);
+  const dateISO = new Date().toISOString();
+  const base = Date.now();
+  const txId = 'tx_'+base;
+  const addId = 'add_'+base;
+  // Add to addedMoney to show in deposits table
+  state.addedMoney.push({ id: addId, amount: rAmt, method: 'card', methodDisplay: 'cash -> card', dateISO, type: 'add-money', linkedTxId: txId });
+  // mark transfer expense as transfer so it won't show in expense lists
+  state.expenses.push({ id: txId, amount:-rAmt, category:'Deposit', method:'cash', dateISO, type: 'transfer', linkedAddId: addId });
+  saveState(); renderAll(); $('transferAmount').value='';
+}
+
+/* Password protected reset */
+function showPasswordModal() {
+  $('passwordModal').style.display = 'flex';
+  $('resetPassword').value = '';
+}
+
+function confirmReset() {
+  const password = $('resetPassword').value;
+  if (password === RESET_PASSWORD) {
+    state.expenses = [];
+    state.addedMoney = [];
+    state.balances = {card: 0, cash: 0};
+    saveState();
+    renderAll();
+    $('passwordModal').style.display = 'none';
+    alert('All data has been reset.');
+  } else {
+    alert('Incorrect password. Reset cancelled.');
+    $('passwordModal').style.display = 'none';
+  }
+}
+
+/* Summaries & charts */
+function onTab(e){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  renderSummary();
+}
+function getRange(){
+  const active = document.querySelector('.tab.active').dataset.range;
+  return active;
+}
+function renderSummary(){
+  // compute totals for chosen range
+  const range = getRange();
+  const now = new Date();
+  let from;
+  if(range==='daily'){ from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+  else if(range==='weekly'){ const d = now.getDay(); const start = new Date(now); start.setDate(now.getDate() - d); from = new Date(start.getFullYear(), start.getMonth(), start.getDate()); }
+  else { from = new Date(now.getFullYear(), now.getMonth(), 1); }
+
+  // Only include actual expenses (exclude add-money and transfers)
+  const filtered = state.expenses.filter(tx => new Date(tx.dateISO) >= from && tx.type === 'expense');
+
+  // totals by category and method
+  const catTotals = {};
+  let totalCard=0, totalCash=0, total=0;
+  filtered.forEach(tx=>{
+    const c = tx.category || 'Other';
+    catTotals[c] = (catTotals[c]||0) + tx.amount;
+    if(tx.method==='card') totalCard += tx.amount;
+    else totalCash += tx.amount;
+    total += tx.amount;
+  });
+
+  const sc = document.getElementById('summaryCardAmount'); if(sc) sc.textContent = fmt(Math.abs(totalCard));
+  const scc = document.getElementById('summaryCashAmount'); if(scc) scc.textContent = fmt(Math.abs(totalCash));
+  const ts = document.getElementById('totalSpend'); if(ts) ts.textContent = fmt(Math.abs(total));
+
+  // prepare pie chart data (use absolute of negative amounts only; include positive TopUps as separate)
+  const entries = Object.entries(catTotals).map(([k,v])=> ({k, v: Math.abs(v)})).filter(x=>x.v>0);
+  drawPieChart(entries);
+}
+
+/* Simple pie chart drawing */
+function drawPieChart(entries){
+  const canvas = $('pieChart'); const ctx = canvas.getContext('2d');
+  // set canvas pixel size
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const total = entries.reduce((s,e)=>s+e.v,0) || 1;
+  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#84cc16','#6366f1'];
+  let start = 0;
+  const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(cx,cy)*0.8;
+  entries.forEach((e,i)=>{
+    const slice = e.v/total * 2 * Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy, r, start, start+slice);
+    ctx.closePath(); ctx.fillStyle = colors[i%colors.length]; ctx.fill();
+    start += slice;
+  });
+
+  // legend
+  const legend = $('legend'); legend.innerHTML='';
+  entries.forEach((e,i)=>{
+    const p = document.createElement('div'); p.style.display='flex'; p.style.alignItems='center'; p.style.marginBottom='4px';
+    const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background=colors[i%colors.length]; sw.style.marginRight='6px';
+    p.appendChild(sw);
+    p.appendChild(document.createTextNode(`${e.k}: ${fmt(e.v)}`));
+    legend.appendChild(p);
+  });
+}
+
+/* CSV export/import */
+function exportCSVWithoutPrompt() {
+  function escapeCSV(val) {
+    if (val == null) return '';
+    const s = String(val);
+    if (s.includes('"')) return '"' + s.replace(/"/g, '""') + '"';
+    if (s.includes(',') || s.includes('\n')) return '"' + s + '"';
+    return s;
+  }
+
+  // First row: state as JSON (for perfect restoration)
+  const meta = JSON.stringify({
+    version: 2,
+    timestamp: new Date().toISOString(),
+    data: state  // Store complete state exactly as is
+  });
+
+  const rows = [];
+  rows.push(['__POCKETTRACK_STATE__', meta]);
+  rows.push([]); // Empty row for separation
+
+  // Header row
+  rows.push([
+    'ID',
+    'Date',
+    'Amount',
+    'Category',
+    'Method',
+    'Type',
+    'LinkedAddId',
+    'LinkedTxId',
+    'MethodDisplay'
+  ]);
+
+  // Export all expenses first
+  state.expenses.forEach(tx => {
+    rows.push([
+      tx.id,
+      tx.dateISO,
+      tx.amount,
+      tx.category,
+      tx.method,
+      tx.type,
+      tx.linkedAddId || '',
+      tx.linkedTxId || '',
+      tx.methodDisplay || ''
+    ]);
+  });
+
+  // Export all addedMoney records to ensure complete data
+  state.addedMoney.forEach(am => {
+    rows.push([
+      am.id,
+      am.dateISO,
+      am.amount,
+      am.type === 'add-money' ? 'TopUp' : '',
+      am.method,
+      'add-money',
+      '',
+      am.linkedTxId || '',
+      am.methodDisplay || ''
+    ]);
+  });
+
+  // Use CRLF for better Excel compatibility and prepend UTF-8 BOM
+  const csvBody = rows.map(r => r.map(escapeCSV).join(',')).join('\r\n');
+  const csv = '\uFEFF' + csvBody;
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'pockettrack_export.csv';
+  a.click();
+}
+let pendingImportFile = null;
+
+function handleImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    let text = ev.target.result;
+    // strip BOM if present
+    if(text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+    // Robust CSV parser: handles quoted fields, escaped quotes, commas and newlines inside quotes
+    function parseCSV(input){
+      const rows = [];
+      let cur = '';
+      let row = [];
+      let inQuotes = false;
+      for(let i=0;i<input.length;i++){
+        const ch = input[i];
+        const next = input[i+1];
+        if(ch === '"'){
+          if(inQuotes && next === '"'){
+            // escaped quote
+            cur += '"';
+            i++; // skip next
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if(ch === ',' && !inQuotes){
+          row.push(cur);
+          cur = '';
+        } else if((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuotes){
+          // handle CRLF
+          if(ch === '\r' && next === '\n') i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      // push last field
+      if(cur !== '' || inQuotes || row.length > 0){
+        row.push(cur);
+        rows.push(row);
+      }
+      // Trim optional surrounding quotes from each field (they were handled but keep safe)
+      return rows.map(r => r.map(f => {
+        if(!f) return '';
+        f = f.replace(/\r/g,'');
+        if(f.startsWith('"') && f.endsWith('"')) f = f.slice(1,-1).replace(/""/g,'"');
+        return f;
+      }));
+    }
+
+    const rows = parseCSV(text);
+    if(!rows || rows.length === 0) return;
+
+    // First try to restore from JSON state (most reliable method)
+    if(rows[0] && rows[0][0] === '__POCKETTRACK_STATE__' && rows[0][1]){
+      try {
+        const meta = JSON.parse(rows[0][1]);
+        if (meta.version === 2 && meta.data) {
+          // Direct state restoration
+          if (meta.data.balances && meta.data.expenses && meta.data.addedMoney) {
+            // Restore categories, but filter out 'TopUp' if present
+            let importedCategories = Array.isArray(meta.data.categories) ? meta.data.categories.filter(c => c !== 'TopUp') : [...ORIGINAL_CATEGORIES];
+            // Also add any categories found in expenses that are not in the list
+            meta.data.expenses.forEach(e => {
+              if (e.category && !importedCategories.includes(e.category) && e.category !== 'TopUp') {
+                importedCategories.push(e.category);
+              }
+            });
+            state = {
+              balances: {
+                card: Number(meta.data.balances.card) || 0,
+                cash: Number(meta.data.balances.cash) || 0
+              },
+              expenses: meta.data.expenses.map(e => ({
+                id: e.id,
+                amount: Number(e.amount),
+                category: e.category,
+                method: e.method,
+                dateISO: e.dateISO,
+                type: e.type,
+                linkedAddId: e.linkedAddId || '',
+                linkedTxId: e.linkedTxId || '',
+                methodDisplay: e.methodDisplay || ''
+              })),
+              addedMoney: meta.data.addedMoney.map(a => ({
+                id: a.id,
+                amount: Number(a.amount),
+                method: a.method,
+                dateISO: a.dateISO,
+                type: 'add-money',
+                linkedTxId: a.linkedTxId || '',
+                methodDisplay: a.methodDisplay || ''
+              })),
+              categories: importedCategories
+            };
+            saveState();
+            renderAll();
+            return;
+          }
+        }
+      } catch(err) {
+        console.warn('State restoration failed:', err);
+      }
+    }
+
+    // If JSON restore fails, try CSV row-based import
+    if(rows.length < 4) return; // Need header + data
+    const header = rows[2].map(h => h ? h.toString().trim().toLowerCase() : ''); // Header is in row 3
+    const colIndex = {};
+    header.forEach((h, idx) => { if(h) colIndex[h] = idx; });
+
+    // Reset state before importing
+    state = { balances:{card:0,cash:0}, expenses:[], addedMoney:[] };
+    const processedIds = new Set();
+
+    // Start from row 3 (after header)
+    for(let i=3; i<rows.length; i++){
+      const row = rows[i];
+      if(!row || row.length < 1 || !row.some(cell => cell?.trim())) continue;
+
+      // Get all fields from the row
+      const fields = {
+        id: row[colIndex['id']]?.trim(),
+        dateISO: row[colIndex['date']]?.trim(),
+        amount: row[colIndex['amount']]?.trim(),
+        category: row[colIndex['category']]?.trim(),
+        method: row[colIndex['method']]?.trim(),
+        type: row[colIndex['type']]?.trim()?.toLowerCase(),
+        linkedAddId: row[colIndex['linkedaddid']]?.trim(),
+        linkedTxId: row[colIndex['linkedtxid']]?.trim(),
+        methodDisplay: row[colIndex['methoddisplay']]?.trim()
+      };
+
+      // Skip if we've already processed this ID
+      if (fields.id && processedIds.has(fields.id)) continue;
+      if (fields.id) processedIds.add(fields.id);
+
+      // Validate and normalize the data
+      const txn = {
+        id: fields.id || `tx_${Date.now()}_${i}`,
+        dateISO: fields.dateISO || new Date().toISOString(),
+        amount: Number(parseNumber(fields.amount)) || 0,
+        category: fields.category || 'Other',
+        method: fields.method || 'card',
+        type: fields.type || 'expense'
+      };
+
+      // Determine and validate transaction type
+      let finalType = txn.type.toLowerCase();
+      
+      // Check if we need to override the type based on category or other fields
+      if (txn.category === 'TopUp' || txn.amount > 0) {
+        finalType = 'add-money';
+      } else if (txn.category === 'Withdraw' || txn.category === 'Deposit') {
+        finalType = 'transfer';
+      }
+      
+      // Update the transaction type
+      txn.type = finalType;
+      
+      // Handle amount signs and categories based on transaction type
+      if(finalType === 'transfer') {
+        amount = -Math.abs(amount); // transfers are always negative in expenses list
+        if(!category) {
+          category = method === 'card' ? 'Withdraw' : 'Deposit';
+        }
+      } else if(finalType === 'add-money' || finalType === 'income' || finalType === 'topup') {
+        amount = Math.abs(amount); // add-money is always positive
+        category = 'TopUp'; // ensure TopUp category for add-money
+      } else if(finalType === 'expense') {
+        amount = -Math.abs(amount); // expenses are always negative
+        category = category || 'Other';
+      }
+
+      // Create expense record with all fields preserved
+      const expenseObj = {
+        id,
+        amount,
+        category,
+        method: method || (finalType === 'add-money' ? 'card' : 'card'),
+        dateISO,
+        type: finalType
+      };
+      
+      // Preserve all linking fields
+      if(linkedAddId) expenseObj.linkedAddId = linkedAddId;
+      if(linkedTxId) expenseObj.linkedTxId = linkedTxId;
+      if(methodDisplay) expenseObj.methodDisplay = methodDisplay;
+      state.expenses.push(expenseObj);
+
+      // Handle addedMoney records for add-money and transfers
+      if(finalType === 'add-money' || finalType === 'transfer') {
+        const amId = linkedAddId || (id.startsWith('add_') ? id : 'add_'+id);
+        
+        // For transfers, set up the proper receiving side
+        let amMethod = method;
+        let amDisplay = methodDisplay;
+        
+        if(finalType === 'transfer') {
+          if(category === 'Withdraw') {
+            amMethod = 'cash';
+            amDisplay = 'card -> cash';
+          } else if(category === 'Deposit') {
+            amMethod = 'card';
+            amDisplay = 'cash -> card';
+          }
+        }
+
+        // Only add if not already present
+        if(!state.addedMoney.some(a => a.id === amId)) {
+          state.addedMoney.push({
+            id: amId,
+            amount: Math.abs(amount),
+            method: amMethod || '',
+            dateISO,
+            type: 'add-money',
+            linkedTxId: linkedTxId || id,
+            methodDisplay: amDisplay || ''
+          });
+        }
+      }
+    }
+
+    // Recalculate balances from scratch
+    state.balances = { card: 0, cash: 0 };
+    
+    // First handle all regular expenses and add-money transactions
+    state.expenses.forEach(tx => {
+      if (tx.type === 'transfer') {
+        // Skip transfers for now, we'll handle them separately
+        return;
+      }
+      
+      if (tx.method === 'card') {
+        state.balances.card = round(state.balances.card + Number(tx.amount));
+      } else if (tx.method === 'cash') {
+        state.balances.cash = round(state.balances.cash + Number(tx.amount));
+      }
+    });
+    
+    // Now handle transfers separately
+    state.expenses.forEach(tx => {
+      if (tx.type !== 'transfer') return;
+      
+      const amount = Math.abs(Number(tx.amount));
+      if (tx.category === 'Withdraw') {
+        // Card to Cash transfer
+        state.balances.card = round(state.balances.card - amount);
+        state.balances.cash = round(state.balances.cash + amount);
+      } else if (tx.category === 'Deposit') {
+        // Cash to Card transfer
+        state.balances.cash = round(state.balances.cash - amount);
+        state.balances.card = round(state.balances.card + amount);
+      }
+    });
+
+    saveState();
+    renderAll();
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+/* Clear form */
+function clearForm(){
+  $('expenseForm').reset();
+  $('category').value = state.categories[0] || 'Food'; // Set first category as default
+  $('expenseDate').value = ''; // Clear date
+}
+
+// Initialize
+// Category Manager UI and Logic
+function renderCategoryManager() {
+  const listDiv = document.getElementById('categoryList');
+  const msgDiv = document.getElementById('categoryMsg');
+  listDiv.innerHTML = '';
+  msgDiv.textContent = '';
+  // Track selected category index in window.selectedCategoryIdx
+  if (typeof window.selectedCategoryIdx !== 'number' || window.selectedCategoryIdx < 0 || window.selectedCategoryIdx >= state.categories.length) {
+    window.selectedCategoryIdx = 0;
+  }
+  state.categories.forEach((cat, idx) => {
+    const catDiv = document.createElement('div');
+    catDiv.style.display = 'flex';
+    catDiv.style.alignItems = 'center';
+    catDiv.style.gap = '4px';
+    catDiv.style.background = idx === window.selectedCategoryIdx ? '#dbeafe' : '#f3f7fb';
+    catDiv.style.fontWeight = idx === window.selectedCategoryIdx ? 'bold' : '';
+    catDiv.style.padding = '4px 10px';
+    catDiv.style.borderRadius = '8px';
+    catDiv.style.fontSize = '14px';
+    catDiv.textContent = cat;
+    catDiv.style.cursor = 'pointer';
+    catDiv.onclick = function() {
+      window.selectedCategoryIdx = idx;
+      renderCategoryManager();
+    };
+    listDiv.appendChild(catDiv);
+  });
+  // Update remove/move button state
+  const removeBtn = document.getElementById('removeCategoryBtn');
+  const moveUpBtn = document.getElementById('moveUpCategoryBtn');
+  const moveDownBtn = document.getElementById('moveDownCategoryBtn');
+  const selectedIdx = window.selectedCategoryIdx;
+  const selectedCat = state.categories[selectedIdx];
+  const used = state.expenses.some(e => e.category === selectedCat);
+  if (removeBtn) removeBtn.disabled = used || !selectedCat;
+  if (moveUpBtn) moveUpBtn.disabled = selectedIdx <= 0;
+  if (moveDownBtn) moveDownBtn.disabled = selectedIdx < 0 || selectedIdx >= state.categories.length - 1;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const addBtn = document.getElementById('addCategoryBtn');
+  const input = document.getElementById('newCategoryInput');
+  const msgDiv = document.getElementById('categoryMsg');
+  const removeBtn = document.getElementById('removeCategoryBtn');
+  const moveUpBtn = document.getElementById('moveUpCategoryBtn');
+  const moveDownBtn = document.getElementById('moveDownCategoryBtn');
+  if (addBtn && input) {
+    addBtn.onclick = function() {
+      const val = input.value.trim();
+      if (!val) { msgDiv.textContent = 'Enter a category name.'; return; }
+      if (state.categories.includes(val)) { msgDiv.textContent = 'Category already exists.'; return; }
+      if (val.length > 20) { msgDiv.textContent = 'Category name too long.'; return; }
+      // Insert new category as the second last item
+      if (state.categories.length < 1) {
+        state.categories.push(val);
+        window.selectedCategoryIdx = 0;
+      } else {
+        state.categories.splice(state.categories.length - 1, 0, val);
+        window.selectedCategoryIdx = state.categories.length - 2;
+      }
+      input.value = '';
+      renderAll();
+      updateAllCategoryDropdowns();
+    };
+  }
+  if (removeBtn) {
+    removeBtn.onclick = function() {
+      const idx = window.selectedCategoryIdx;
+      if (typeof idx !== 'number' || idx < 0 || idx >= state.categories.length) return;
+      const cat = state.categories[idx];
+      const used = state.expenses.some(e => e.category === cat);
+      if (used) { msgDiv.textContent = 'Cannot remove: category in use.'; return; }
+      state.categories.splice(idx, 1);
+      // Adjust selection
+      if (window.selectedCategoryIdx >= state.categories.length) window.selectedCategoryIdx = state.categories.length - 1;
+      renderAll();
+      updateAllCategoryDropdowns();
+    };
+  }
+  if (moveUpBtn) {
+    moveUpBtn.onclick = function() {
+      const idx = window.selectedCategoryIdx;
+      if (idx > 0) {
+        const temp = state.categories[idx - 1];
+        state.categories[idx - 1] = state.categories[idx];
+        state.categories[idx] = temp;
+        window.selectedCategoryIdx = idx - 1;
+        renderAll();
+        updateAllCategoryDropdowns();
+      }
+    };
+  }
+  if (moveDownBtn) {
+    moveDownBtn.onclick = function() {
+      const idx = window.selectedCategoryIdx;
+      if (idx >= 0 && idx < state.categories.length - 1) {
+        const temp = state.categories[idx + 1];
+        state.categories[idx + 1] = state.categories[idx];
+        state.categories[idx] = temp;
+        window.selectedCategoryIdx = idx + 1;
+        renderAll();
+        updateAllCategoryDropdowns();
+      }
+    };
+  }
+});
+
+// On reset, restore only original categories
+const origConfirmReset = confirmReset;
+confirmReset = function() {
+  const password = $('resetPassword').value;
+  if (password === RESET_PASSWORD) {
+  state.expenses = [];
+  state.addedMoney = [];
+  state.balances = {card: 0, cash: 0};
+  state.categories = [...ORIGINAL_CATEGORIES];
+  saveState();
+  renderAll();
+  updateAllCategoryDropdowns();
+  $('passwordModal').style.display = 'none';
+  alert('All data has been reset.');
+  } else {
+    alert('Incorrect password. Reset cancelled.');
+    $('passwordModal').style.display = 'none';
+  }
+};
+
+init();
+</script>
+</body>
+</html>
